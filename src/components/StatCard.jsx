@@ -1,22 +1,31 @@
+const colorMap = {
+  blue: { bg: 'bg-[#2563eb]/10', text: 'text-[#2563eb]', iconBg: 'bg-[#2563eb]/10' },
+  green: { bg: 'bg-[#10b981]/10', text: 'text-[#10b981]', iconBg: 'bg-[#10b981]/10' },
+  purple: { bg: 'bg-[#8b5cf6]/10', text: 'text-[#8b5cf6]', iconBg: 'bg-[#8b5cf6]/10' },
+  orange: { bg: 'bg-[#f59e0b]/10', text: 'text-[#f59e0b]', iconBg: 'bg-[#f59e0b]/10' },
+  red: { bg: 'bg-[#ef4444]/10', text: 'text-[#ef4444]', iconBg: 'bg-[#ef4444]/10' },
+}
+
 export default function StatCard({ icon, label, value, trend, color = 'blue' }) {
-  const colors = {
-    blue:   { bg: 'bg-blue-50',   border: 'border-blue-200', iconBg: 'bg-blue-100 text-blue-600',   valueColor: 'text-blue-700' },
-    green:  { bg: 'bg-green-50',  border: 'border-green-200', iconBg: 'bg-green-100 text-green-600', valueColor: 'text-green-700' },
-    purple: { bg: 'bg-purple-50', border: 'border-purple-200', iconBg: 'bg-purple-100 text-purple-600', valueColor: 'text-purple-700' },
-    orange: { bg: 'bg-orange-50', border: 'border-orange-200', iconBg: 'bg-orange-100 text-orange-600', valueColor: 'text-orange-700' },
-    red:    { bg: 'bg-red-50',    border: 'border-red-200',    iconBg: 'bg-red-100 text-red-600',       valueColor: 'text-red-700' },
-  }
-  const c = colors[color] || colors.blue
+  const theme = colorMap[color] || colorMap.blue
 
   return (
-    <div className={`${c.bg} ${c.border} border rounded-xl p-5 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow duration-200`}>
-      <div className={`${c.iconBg} w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0`}>
-        <span className="material-symbols-outlined text-[22px]">{icon}</span>
+    <div className="bg-white p-6 rounded-3xl border border-slate-100 flex items-center gap-6 shadow-sm hover:shadow-md transition-shadow duration-300">
+      <div className={`w-14 h-14 rounded-2xl ${theme.iconBg} flex items-center justify-center ${theme.text}`}>
+        <span className="material-symbols-outlined text-[28px]">{icon}</span>
       </div>
-      <div className="min-w-0">
-        <p className={`text-2xl font-bold ${c.valueColor}`}>{value}</p>
-        <p className="text-xs font-medium text-slate-500 mt-0.5">{label}</p>
-        {trend && <p className="text-[11px] text-slate-400 mt-0.5">{trend}</p>}
+      <div className="flex-1">
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{label}</p>
+        </div>
+        <div className="flex items-baseline gap-2">
+          <h3 className="text-2xl font-black text-[#1e293b]">{value}</h3>
+          {trend && (
+            <span className="text-[10px] font-bold text-slate-400">
+              {trend}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   )

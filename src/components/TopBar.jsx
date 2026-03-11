@@ -1,28 +1,30 @@
 export default function TopBar({ title }) {
   return (
-    <header className="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-10">
+    <header className="h-20 bg-white border-b border-slate-100 px-10 flex items-center justify-between sticky top-0 z-10 backdrop-blur-md bg-white/80">
       <div className="flex items-center gap-4 flex-1">
-        {title && <h2 className="text-xl font-bold tracking-tight">{title}</h2>}
+        <h2 className="text-[20px] font-bold text-[#2563eb] tracking-tight">EduCore Admin Portal</h2>
       </div>
       <div className="flex items-center gap-6">
-        <div className="relative w-64">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">search</span>
-          <input
-            className="w-full bg-slate-100 border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-[#2563eb]/30 outline-none"
-            placeholder="Search..."
-            type="text"
-          />
-        </div>
-        <div className="flex items-center gap-3 border-l border-slate-200 pl-6">
-          <button className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg relative">
-            <span className="material-symbols-outlined">notifications</span>
-            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+        <div className="flex items-center gap-2">
+          <button className="p-2.5 text-slate-400 hover:bg-slate-50 rounded-xl transition-all relative">
+            <span className="material-symbols-outlined text-[24px]">notifications</span>
+            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
           </button>
-          <div className="flex items-center gap-3 cursor-pointer">
-            <div className="text-right hidden sm:block">
-              <p className="text-sm font-semibold">Administrator</p>
-              <p className="text-[10px] font-bold text-[#2563eb] uppercase">MIT Connect</p>
-            </div>
+          <button className="p-2.5 text-slate-400 hover:bg-slate-50 rounded-xl transition-all">
+            <span className="material-symbols-outlined text-[24px]">settings</span>
+          </button>
+        </div>
+        <div className="flex items-center gap-4 border-l border-slate-100 pl-6 cursor-pointer group">
+          <div className="text-right hidden sm:block">
+            <p className="text-sm font-bold text-[#1e293b]">Admin User</p>
+            <p className="text-[11px] font-bold text-[#64748b] uppercase tracking-wider">Super Admin</p>
+          </div>
+          <div className="w-11 h-11 rounded-xl bg-slate-100 overflow-hidden border-2 border-white shadow-sm transition-transform group-hover:scale-105">
+            <img 
+              src="https://img.freepik.com/free-photo/young-bearded-man-with-striped-shirt_273609-5677.jpg" 
+              alt="Profile" 
+              className="w-full h-full object-cover"
+            />
           </div>
         </div>
       </div>

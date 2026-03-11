@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 
-export default function AddStudentModal({ isOpen, onClose }) {
+export default function AddStudentModal({ isOpen, onClose, onSuccess }) {
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState({});
   const initialData = {
@@ -127,6 +127,7 @@ export default function AddStudentModal({ isOpen, onClose }) {
     e.preventDefault();
     if (validateStep(step)) {
       console.log('Final Enrollment:', formData);
+      if (onSuccess) onSuccess(formData);
       localStorage.removeItem('add_student_draft');
       alert('Student Enrollment Submitted Successfuly!');
       onClose();

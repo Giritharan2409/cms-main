@@ -1,50 +1,35 @@
-export default function SearchFilter({ searchQuery, onSearchChange, department, onDepartmentChange, year, onYearChange, departments, years, onAddClick }) {
+export default function SearchFilter({ searchQuery, onSearchChange, onAddClick }) {
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-      <div className="flex items-center gap-3 flex-1">
-        {/* Search */}
-        <div className="relative flex-1 max-w-sm">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
-          <input
-            type="text"
-            placeholder="Search students..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-10 pr-4 py-2.5 w-full bg-white border border-slate-200 rounded-lg text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]/30 focus:border-[#2563eb] transition-all duration-200"
-          />
-        </div>
-
-        {/* Department Filter */}
-        <select
-          value={department}
-          onChange={(e) => onDepartmentChange(e.target.value)}
-          className="px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]/30 focus:border-[#2563eb] cursor-pointer"
-        >
-          {departments.map(d => (
-            <option key={d} value={d}>{d === 'All' ? 'All Departments' : d}</option>
-          ))}
-        </select>
-
-        {/* Year Filter */}
-        <select
-          value={year}
-          onChange={(e) => onYearChange(e.target.value)}
-          className="px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]/30 focus:border-[#2563eb] cursor-pointer"
-        >
-          {years.map(y => (
-            <option key={y} value={y}>{y === 'All' ? 'All Years' : y}</option>
-          ))}
-        </select>
+    <div className="flex flex-col lg:flex-row items-center gap-4 mb-8">
+      <div className="relative flex-1 group w-full lg:w-auto">
+        <span className="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#2563eb] text-[20px] transition-colors">search</span>
+        <input
+          type="text"
+          placeholder="Search students by name, ID, or department..."
+          className="w-full bg-white border border-slate-200 rounded-[18px] pl-12 pr-6 py-4 text-sm focus:ring-4 focus:ring-[#2563eb]/10 focus:border-[#2563eb] outline-none transition-all placeholder:text-slate-400 shadow-sm"
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+        />
       </div>
 
-      {/* Add Student Button */}
-      <button 
-        onClick={onAddClick}
-        className="flex items-center gap-2 px-5 py-2.5 bg-[#2563eb] text-white rounded-lg text-sm font-semibold hover:bg-[#1d4ed8] shadow-sm hover:shadow-md transition-all duration-200 whitespace-nowrap active:scale-95"
-      >
-        <span className="material-symbols-outlined text-lg">person_add</span>
-        Add Student
-      </button>
+      <div className="flex items-center gap-3 w-full lg:w-auto h-full">
+        <button className="flex items-center justify-center gap-2 h-[52px] px-6 bg-white border border-slate-200 rounded-[18px] text-sm font-bold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm">
+          <span className="material-symbols-outlined text-[20px]">filter_alt</span>
+          <span className="hidden sm:inline">Filter</span>
+        </button>
+        <button className="flex items-center justify-center gap-2 h-[52px] px-6 bg-white border border-slate-200 rounded-[18px] text-sm font-bold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm">
+          <span className="material-symbols-outlined text-[20px]">ios_share</span>
+          <span className="hidden sm:inline">Export</span>
+        </button>
+        <div className="w-px h-8 bg-slate-200 mx-1 hidden lg:block" />
+        <button
+          onClick={onAddClick}
+          className="flex items-center justify-center gap-2 h-[52px] px-6 bg-[#2563eb] text-white rounded-[18px] text-sm font-bold hover:bg-[#1d4ed8] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-blue-100 flex-1 lg:flex-none whitespace-nowrap"
+        >
+          <span className="material-symbols-outlined text-[20px]">add</span>
+          <span>Add Student</span>
+        </button>
+      </div>
     </div>
   )
 }

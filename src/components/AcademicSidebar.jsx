@@ -3,20 +3,19 @@ import { destroyUserSession } from '../auth/sessionController'
 
 const navGroups = [
   {
-    label: 'Main Menu',
+    label: 'Overview',
     items: [
       { to: '/dashboard', icon: 'dashboard', label: 'Dashboard' },
-      { to: '/students',  icon: 'people',    label: 'Students' },
+      { to: '/students',  icon: 'group',    label: 'Students' },
+      { to: '/faculty',   icon: 'person',   label: 'Faculty' },
+      { to: '/departments', icon: 'domain', label: 'Departments' },
     ],
   },
   {
-    label: 'Academics',
+    label: 'Administration',
     items: [
-      { to: '/timetable',  icon: 'calendar_month', label: 'Timetable' },
-      { to: '/attendance', icon: 'fact_check',      label: 'Attendance' },
-      { to: '/exams',      icon: 'quiz',            label: 'Exams' },
-      { to: '/placement',  icon: 'work',            label: 'Placement' },
-      { to: '/facility',   icon: 'meeting_room',    label: 'Facility' },
+      { to: '/fees',      icon: 'payments',      label: 'Fees' },
+      { to: '/reports',   icon: 'assessment',    label: 'Reports' },
     ],
   },
 ]
@@ -32,12 +31,12 @@ export default function AcademicSidebar() {
   return (
     <aside className="w-64 border-r border-slate-200 bg-white flex flex-col fixed h-full overflow-y-auto z-20">
       <div className="p-6 flex items-center gap-3">
-        <div className="bg-[#2563eb] w-10 h-10 rounded-lg flex items-center justify-center text-white">
-          <span className="material-symbols-outlined">school</span>
+        <div className="bg-[#2563eb] w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-100">
+          <span className="material-symbols-outlined text-2xl font-bold">school</span>
         </div>
         <div>
-          <h1 className="font-bold text-lg leading-tight">MIT Connect</h1>
-          <p className="text-xs text-slate-500">College Admin</p>
+          <h1 className="font-extrabold text-[#1e293b] text-xl tracking-tight leading-none">EduCore</h1>
+          <p className="text-[10px] font-bold text-[#64748b] uppercase tracking-[0.1em] mt-1">Admin Portal</p>
         </div>
       </div>
 
@@ -53,14 +52,14 @@ export default function AcademicSidebar() {
                   key={item.to}
                   to={item.to}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                    `flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all duration-200 ${
                       isActive
-                        ? 'bg-[#2563eb]/10 text-[#2563eb] font-medium'
-                        : 'text-slate-600 hover:bg-slate-100'
+                        ? 'bg-[#2563eb]/10 text-[#2563eb] font-semibold shadow-sm'
+                        : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
                     }`
                   }
                 >
-                  <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
+                  <span className="material-symbols-outlined text-[22px]">{item.icon}</span>
                   <span>{item.label}</span>
                 </NavLink>
               ))}
@@ -69,12 +68,25 @@ export default function AcademicSidebar() {
         ))}
       </nav>
 
-      <div className="p-4 border-t border-slate-200 mt-auto">
+      <div className="p-4 border-t border-slate-100 mt-auto">
+        <NavLink
+          to="/settings"
+          className={({ isActive }) =>
+            `w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all duration-200 mb-2 ${
+              isActive
+                ? 'bg-[#2563eb]/10 text-[#2563eb] font-semibold'
+                : 'text-slate-500 hover:bg-slate-50'
+            }`
+          }
+        >
+          <span className="material-symbols-outlined text-[22px]">settings</span>
+          <span>Settings</span>
+        </NavLink>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2 text-red-500 hover:bg-red-50 rounded-lg text-sm font-medium"
+          className="w-full flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-red-500 hover:bg-red-50 rounded-xl text-sm font-medium transition-all duration-200"
         >
-          <span className="material-symbols-outlined text-[20px]">logout</span>
+          <span className="material-symbols-outlined text-[22px]">logout</span>
           <span>Logout</span>
         </button>
       </div>
