@@ -3,6 +3,11 @@ import { getUserSession } from './auth/sessionController';
 import ProtectedRoute from './components/ProtectedRoute';
 import DashboardPage from './pages/DashboardPage';
 import LoginPage from './pages/LoginPage';
+import TimetablePage from './pages/TimetablePage';
+import AttendancePage from './pages/AttendancePage';
+import ExamsPage from './pages/ExamsPage';
+import PlacementPage from './pages/PlacementPage';
+import FacilityPage from './pages/FacilityPage';
 
 export default function App() {
   const session = getUserSession();
@@ -23,6 +28,11 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      <Route path="/timetable" element={<ProtectedRoute><TimetablePage /></ProtectedRoute>} />
+      <Route path="/attendance" element={<ProtectedRoute><AttendancePage /></ProtectedRoute>} />
+      <Route path="/exams" element={<ProtectedRoute><ExamsPage /></ProtectedRoute>} />
+      <Route path="/placement" element={<ProtectedRoute><PlacementPage /></ProtectedRoute>} />
+      <Route path="/facility" element={<ProtectedRoute><FacilityPage /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

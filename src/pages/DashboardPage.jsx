@@ -40,6 +40,14 @@ export default function DashboardPage() {
   const menuGroups = roleMenuGroups[role] || roleMenuGroups.student;
   const userId = sessionUserId || 'N/A';
 
+  const academicRoutes = {
+    Exams: '/exams',
+    Timetable: '/timetable',
+    Attendance: '/attendance',
+    Placement: '/placement',
+    Facility: '/facility',
+  };
+
   useEffect(() => {
     if (!sessionRole || !sessionUserId) {
       navigate('/', { replace: true });
@@ -98,7 +106,10 @@ export default function DashboardPage() {
                       <a
                         href="#"
                         className={groupIndex === 0 && itemIndex === 0 ? 'active' : ''}
-                        onClick={(event) => event.preventDefault()}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          if (academicRoutes[item]) navigate(academicRoutes[item]);
+                        }}
                       >
                         {item}
                       </a>
