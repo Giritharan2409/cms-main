@@ -3,6 +3,7 @@ import Layout from '../components/Layout'
 import StatCard from '../components/StatCard'
 import SearchFilter from '../components/SearchFilter'
 import StudentTable from '../components/StudentTable'
+import AddStudentModal from '../components/AddStudentModal'
 import { students, getStudentStats, departments, years } from '../data/studentData'
 
 export default function StudentsPage() {
@@ -10,6 +11,7 @@ export default function StudentsPage() {
   const [department, setDepartment] = useState('All')
   const [year, setYear] = useState('All')
   const [currentPage, setCurrentPage] = useState(1)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const itemsPerPage = 8
 
   const stats = getStudentStats()
@@ -59,10 +61,14 @@ export default function StudentsPage() {
         onYearChange={handleYear}
         departments={departments}
         years={years}
+        onAddClick={() => setIsModalOpen(true)}
       />
 
       {/* Student Table */}
       <StudentTable students={paginatedStudents} currentPage={currentPage} itemsPerPage={itemsPerPage} />
+
+      {/* Add Student Modal */}
+      <AddStudentModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
 
       {/* Pagination */}
       {filtered.length > 0 && (
