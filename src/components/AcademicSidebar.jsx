@@ -45,7 +45,7 @@ const routeMap = {
   'My Courses': '/my-courses',
 }
 
-export default function AcademicSidebar() {
+export default function AcademicSidebar({ onToggleSidebar }) {
   const navigate = useNavigate()
   const session = getUserSession()
   const role = session?.role || 'student'
@@ -58,7 +58,15 @@ export default function AcademicSidebar() {
 
   return (
     <aside className="w-64 border-r border-slate-200 bg-white flex flex-col fixed h-full overflow-y-auto z-20">
-      <div className="p-6 flex items-center gap-3">
+      <div className="p-6 flex items-center gap-3 relative">
+        <button
+          onClick={onToggleSidebar}
+          className="mr-3 p-2 rounded-full border border-slate-300 bg-white shadow hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          title="Toggle sidebar"
+          style={{ zIndex: 2 }}
+        >
+          <span className="material-symbols-outlined text-3xl">menu</span>
+        </button>
         <div className="bg-[#2563eb] w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-100">
           <span className="material-symbols-outlined text-2xl font-bold">school</span>
         </div>
