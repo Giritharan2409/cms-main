@@ -13,13 +13,16 @@ async def generate_invoice(fee_id: str):
 
     db = get_db()
 
+    fees_structure_collection = db["fees_structure"]
     fees_collection = db["fees"]
     invoices_collection = db["invoices"]
 
     if not ObjectId.is_valid(fee_id):
         raise HTTPException(status_code=400, detail="Invalid fee id")
 
-    fee = await fees_collection.find_one({"_id": ObjectId(fee_id)})
+    fee = await fees_structure_collection.find_one({"_id": ObjectId(fee_id)})
+    if not fee:
+        fee = await fees_collection.find_one({"_id": ObjectId(fee_id)})
     if not fee:
         raise HTTPException(status_code=404, detail="Fee record not found")
 

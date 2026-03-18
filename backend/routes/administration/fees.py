@@ -13,7 +13,7 @@ async def assign_fee(data: AssignFee):
 
     db = get_db()
 
-    fees_collection = db["fees"]
+    fees_collection = db["fees_structure"]
 
     fee = calculate_fee(
         data.first_graduate,
@@ -37,6 +37,7 @@ async def assign_fee(data: AssignFee):
 
     return {
         "message": "Fee assigned successfully",
+        "collection": "fees_structure",
         "id": str(result.inserted_id),
         "total": fee["total"]
     }
