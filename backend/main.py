@@ -1,10 +1,18 @@
 import os
+import sys
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+
+# Allow `uvicorn main:app --reload` from the backend directory by making
+# the project root importable so `backend.*` absolute imports resolve.
+CURRENT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = CURRENT_DIR.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from backend.db import lifespan
 from backend.routes.academics.attendance import router as attendance_router
@@ -16,7 +24,9 @@ from backend.routes.notifications import router as notifications_router
 from backend.routes.payroll import router as payroll_router
 from backend.routes.staff import router as staff_router
 from backend.routes.students import router as students_router
-
+from backend.routes.administration.admissions import router as admissions_router
+from backend.routes.administration.fees import router as fees_router
+from backend.routes.administration.invoices import router as invoices_router
 PORT = int(os.getenv("PORT", 5000))
 
 app = FastAPI(title="CMS API", lifespan=lifespan)
@@ -59,7 +69,9 @@ app.include_router(placement_router)
 app.include_router(facility_router)
 app.include_router(notifications_router)
 app.include_router(students_router)
-
+app.include_router(admissions_router)
+app.include_router(fees_router)
+app.include_router(invoices_router)
 
 @app.get("/{full_path:path}")
 async def serve_react_app(full_path: str):
