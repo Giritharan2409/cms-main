@@ -139,46 +139,79 @@ export default function FacultyPage() {
         </div>
 
         <div className="table-container">
-          <table className="data-table">
+          <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr>
-                <th style={{ width: '12%' }}>Faculty ID</th>
-                <th style={{ width: '25%' }}>Name & Designation</th>
-                <th style={{ width: '18%' }}>Department</th>
-                <th style={{ width: '25%' }}>Contact</th>
-                <th style={{ width: '12%' }}>Status</th>
-                <th style={{ width: '8%', textAlign: 'center' }}>Actions</th>
+              <tr style={{ backgroundColor: 'var(--surface-color)', borderBottom: '2px solid var(--border-color)' }}>
+                <th style={{ width: '10%', padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>Faculty ID</th>
+                <th style={{ width: '22%', padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>Name</th>
+                <th style={{ width: '18%', padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>Designation</th>
+                <th style={{ width: '15%', padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>Department</th>
+                <th style={{ width: '18%', padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>Email</th>
+                <th style={{ width: '10%', padding: '1rem', textAlign: 'center', fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>Status</th>
+                <th style={{ width: '7%', padding: '1rem', textAlign: 'center', fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>Action</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Loading Faculty Data...</td></tr>
+                <tr><td colSpan="7" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)', fontSize: '0.95rem' }}>Loading Faculty Data...</td></tr>
               ) : filteredFaculty.length > 0 ? (
-                filteredFaculty.map(faculty => (
-                  <tr key={faculty._id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td className="font-medium" style={{ color: 'var(--primary)' }}>{faculty.employeeId}</td>
-                    <td>
-                      <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{faculty.name}</div>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>{faculty.designation || 'Faculty Member'}</div>
+                filteredFaculty.map((faculty, index) => (
+                  <tr key={faculty._id} style={{ 
+                    borderBottom: '1px solid var(--border-color)', 
+                    backgroundColor: index % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.01)',
+                    transition: 'background-color 0.2s ease'
+                  }} 
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.02)'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = index % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.01)'}
+                  >
+                    <td style={{ padding: '1rem', color: 'var(--primary)', fontWeight: 600, fontSize: '0.9rem', textAlign: 'left' }}>
+                      {faculty.employeeId}
                     </td>
-                    <td style={{ color: 'var(--text-primary)' }}>{faculty.departmentId}</td>
-                    <td>
-                      <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>{faculty.email}</div>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>{faculty.phone || 'N/A'}</div>
+                    <td style={{ padding: '1rem', color: 'var(--text-primary)', fontWeight: 500, fontSize: '0.9rem', textAlign: 'left' }}>
+                      {faculty.name}
                     </td>
-                    <td>
-                      <span className={`status-badge ${
-                        faculty.employment_status === 'Active' ? 'status-success' : 
-                        faculty.employment_status === 'On-Leave' ? 'status-warning' : 'status-error'
-                      }`} style={{ display: 'inline-block', padding: '0.4rem 0.8rem', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem', fontWeight: 500 }}>
+                    <td style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.9rem', textAlign: 'left' }}>
+                      {faculty.designation || 'Faculty Member'}
+                    </td>
+                    <td style={{ padding: '1rem', color: 'var(--text-primary)', fontSize: '0.9rem', textAlign: 'left' }}>
+                      {faculty.departmentId}
+                    </td>
+                    <td style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.85rem', textAlign: 'left', wordBreak: 'break-word' }}>
+                      {faculty.email || 'N/A'}
+                    </td>
+                    <td style={{ padding: '1rem', textAlign: 'center' }}>
+                      <span style={{ 
+                        display: 'inline-block', 
+                        padding: '0.4rem 0.8rem', 
+                        borderRadius: 'var(--radius-md)', 
+                        fontSize: '0.8rem', 
+                        fontWeight: 600,
+                        backgroundColor: faculty.employment_status === 'Active' ? '#d1fae5' : 
+                                       faculty.employment_status === 'On-Leave' ? '#fef3c7' : '#fee2e2',
+                        color: faculty.employment_status === 'Active' ? '#065f46' : 
+                               faculty.employment_status === 'On-Leave' ? '#92400e' : '#7f1d1d',
+                        whiteSpace: 'nowrap'
+                      }}>
                         {faculty.employment_status || 'Active'}
                       </span>
                     </td>
-                    <td style={{ textAlign: 'center' }}>
+                    <td style={{ padding: '1rem', textAlign: 'center' }}>
                       <button 
-                        className="btn btn-outline btn-sm"
                         onClick={() => navigate(`/faculty/${faculty.employeeId}`)}
-                        style={{ padding: '0.5rem 1rem', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
+                        style={{ 
+                          padding: '0.5rem 1rem', 
+                          fontSize: '0.85rem', 
+                          fontWeight: 500,
+                          backgroundColor: 'var(--primary)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: 'var(--radius-md)',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          whiteSpace: 'nowrap'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                       >
                         View
                       </button>
@@ -187,7 +220,7 @@ export default function FacultyPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="text-center py-8 text-secondary" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                  <td colSpan="7" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
                     No faculty members found matching your criteria.
                   </td>
                 </tr>
