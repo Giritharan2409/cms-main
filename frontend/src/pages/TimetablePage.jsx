@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import { getUserSession } from '../auth/sessionController'
 import { getStudentById } from '../data/studentData'
+import { buildApiUrl } from '../api/apiBase'
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
@@ -458,7 +459,7 @@ export default function TimetablePage({ noLayout = false }) {
 
     async function loadStudentProfile() {
       try {
-        const response = await fetch(`/api/students/${encodeURIComponent(session.userId)}`)
+        const response = await fetch(buildApiUrl(`/students/${encodeURIComponent(session.userId)}`))
         if (response.ok) {
           const profile = await response.json()
           if (isMounted) {
@@ -500,7 +501,7 @@ export default function TimetablePage({ noLayout = false }) {
 
     async function fetchTimetables() {
       try {
-        const response = await fetch('/api/academics/timetable')
+        const response = await fetch(buildApiUrl('/academics/timetable'))
         const payload = await response.json().catch(() => null)
 
         if (!response.ok || !payload?.success || !Array.isArray(payload.data) || payload.data.length === 0) {
@@ -533,7 +534,7 @@ export default function TimetablePage({ noLayout = false }) {
   async function persistTimetable(classId, timetable) {
     try {
       setIsSyncing(true)
-      await fetch(`/api/academics/timetable/${encodeURIComponent(classId)}`, {
+      await fetch(buildApiUrl(`/academics/timetable/${encodeURIComponent(classId)}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
