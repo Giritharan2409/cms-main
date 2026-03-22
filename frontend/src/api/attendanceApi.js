@@ -1,4 +1,5 @@
 import { API_BASE } from './apiBase';
+export { buildApiUrl } from './apiBase';
 
 async function parseResponse(res, fallbackMessage) {
   const json = await res.json().catch(() => null);
