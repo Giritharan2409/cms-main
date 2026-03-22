@@ -13,10 +13,10 @@ function resolveHostBase() {
   const configuredBase = normalizeHostBase(configuredBaseRaw);
   if (configuredBase) return configuredBase;
 
+  // Production: use same-origin paths; render.yaml rewrites /api/* to backend
+  // This avoids CORS errors and respects the static site's rewrite rules
   if (!import.meta.env.DEV && typeof window !== 'undefined') {
-    if (window.location.hostname === 'cms1-weof.onrender.com') {
-      return 'https://cms-x82g.onrender.com';
-    }
+    return '';
   }
 
   return '';
@@ -24,7 +24,8 @@ function resolveHostBase() {
 
 const hostBase = resolveHostBase();
 
-export const API_BASE = hostBase ? `${trimTrailingSlash(hostBase)}/api` : '/api';
+// Always use same-origin /api paths; let Render rewrites handle backend routing
+export const API_BASE = '/api';
 
 export function buildApiUrl(path) {
   const normalizedPath = String(path || '').startsWith('/') ? path : `/${path}`;
