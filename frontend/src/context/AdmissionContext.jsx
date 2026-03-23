@@ -9,67 +9,45 @@ export function AdmissionProvider({ children }) {
   const [approvedStudents, setApprovedStudents] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ================= SANITIZE STUDENT =================
-  const sanitizeStudent = (item) => {
-    if (!item) return item;
+  // ✅ Sanitize data
+  const sanitizeStudent = (student) => {
+    if (!student) return student;
     return {
-      ...item,
+      ...student,
       course:
-        typeof item.course === 'object'
-          ? item.course?.course || item.course?.name || 'N/A'
-          : item.course || 'N/A',
+        typeof student.course === 'object'
+          ? student.course?.course || student.course?.name || 'N/A'
+          : student.course || 'N/A',
     };
   };
 
-  // ================= SANITIZE FACULTY =================
-  const sanitizeFaculty = (item) => {
-    if (!item) return item;
-
-    return {
-      ...item,
-      id: item.id || item._id,
-
-      // 🔥 IMPORTANT mapping for UI
-      staffId: item.admission_id || item.employeeId || 'N/A',
-      name: item.fullName || item.name || 'N/A',
-      role: item.designation || 'Faculty',
-      department: item.department || 'N/A',
-      status: item.status || 'Pending',
-      paymentStatus: item.paymentStatus || 'Pending',
-    };
-  };
-
-  // ================= FETCH STUDENTS =================
+  // ✅ Fetch Students
   const fetchStudentAdmissions = async () => {
     try {
       const res = await fetch(`${API_BASE}/admissions/students`);
       if (res.ok) {
         const data = await res.json();
-        setStudentApps(data.map(sanitizeStudent));
+        setStudentApps(data.map((item) => sanitizeStudent(item)));
       }
     } catch (err) {
       console.error('❌ Error fetching students:', err);
     }
   };
 
-  // ================= FETCH FACULTY =================
+  // ✅ Fetch Faculty
   const fetchFacultyAdmissions = async () => {
     try {
-      const res = await fetch(`${API_BASE}/faculty`);
+      const res = await fetch(`${API_BASE}/admissions/faculty`);
       if (res.ok) {
         const data = await res.json();
-
-        console.log("🔥 Faculty API Data:", data);
-
-        // 🔥 IMPORTANT: map properly
-        setFacultyApps(data.map(sanitizeFaculty));
+        setFacultyApps(data.map((item) => sanitizeStudent(item)));
       }
     } catch (err) {
       console.error('❌ Error fetching faculty:', err);
     }
   };
 
-  // ================= FETCH APPROVED =================
+  // ✅ Fetch Approved Students
   const fetchApprovedStudents = async () => {
     try {
       await fetch(`${API_BASE}/admissions/purge-invalid-approved`, {
@@ -81,7 +59,7 @@ export function AdmissionProvider({ children }) {
       if (res.ok) {
         const data = await res.json();
         setApprovedStudents(
-          (data.approved_students || []).map(sanitizeStudent)
+          (data.approved_students || []).map((item) => sanitizeStudent(item))
         );
       }
     } catch (err) {
@@ -89,7 +67,7 @@ export function AdmissionProvider({ children }) {
     }
   };
 
-  // ================= INITIAL LOAD =================
+  // ✅ INITIAL LOAD
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
@@ -104,97 +82,89 @@ export function AdmissionProvider({ children }) {
     loadData();
   }, []);
 
-  // ================= DELETE =================
+  // ✅ Delete Student
   const deleteStudentApp = async (id) => {
-    await fetch(`${API_BASE}/admissions/${id}`, { method: 'DELETE' });
-    fetchStudentAdmissions();
+    try {
+      await fetch(`${API_BASE}/admissions/${id}`, { method: 'DELETE' });
+      fetchStudentAdmissions();
+    } catch (err) {
+      console.error('❌ Error deleting student:', err);
+    }
   };
 
+  // ✅ Delete Faculty
   const deleteFacultyApp = async (id) => {
-    await fetch(`${API_BASE}/faculty/${id}`, { method: 'DELETE' });
-    fetchFacultyAdmissions();
+    try {
+      await fetch(`${API_BASE}/admissions/faculty/${id}`, { method: 'DELETE' });
+      fetchFacultyAdmissions();
+    } catch (err) {
+      console.error('❌ Error deleting faculty:', err);
+    }
   };
 
-  // ================= UPDATE =================
+  // ✅ Update Student Status
   const updateStudentStatus = async (id, status) => {
-    const endpoint =
-      status === 'Approved'
-        ? `${API_BASE}/admissions/approve/${id}`
-        : `${API_BASE}/admissions/reject/${id}`;
+    try {
+      const endpoint =
+        status === 'Approved'
+          ? `${API_BASE}/admissions/approve/${id}`
+          : `${API_BASE}/admissions/reject/${id}`;
 
-    await fetch(endpoint, { method: 'PUT' });
+      await fetch(endpoint, { method: 'PUT' });
 
-    fetchStudentAdmissions();
-    fetchApprovedStudents();
+      fetchStudentAdmissions();
+      fetchApprovedStudents();
+    } catch (err) {
+      console.error('❌ Error updating student:', err);
+    }
   };
 
-  const updateFacultyStatus = async (id, updates) => {
-    await fetch(`${API_BASE}/faculty/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates),
-    });
+  // ✅ Update Faculty Status
+  const updateFacultyStatus = async (id, status) => {
+    try {
+      const endpoint =
+        status === 'Approved'
+          ? `${API_BASE}/admissions/faculty/approve/${id}`
+          : `${API_BASE}/admissions/faculty/reject/${id}`;
 
-    fetchFacultyAdmissions();
+      await fetch(endpoint, { method: 'PUT' });
+
+      fetchFacultyAdmissions();
+    } catch (err) {
+      console.error('❌ Error updating faculty:', err);
+    }
   };
 
-  // ================= ADD FACULTY =================
+  // ✅ Add Faculty (NEW - important)
   const addFacultyApp = async (facultyData) => {
     try {
-      const res = await fetch(`${API_BASE}/faculty`, {
+      await fetch(`${API_BASE}/faculty/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(facultyData),
       });
 
-      const data = await res.json();
-
-      // Silently continue even if faculty exists - data is already saved to backend
-      if (res.ok) {
-        console.log('✓ Faculty added to context');
-        fetchFacultyAdmissions();
-        return true;
-      } else {
-        console.warn('⚠ Faculty context sync skipped:', data.detail || 'Faculty may already exist');
-        return false;
-      }
+      fetchFacultyAdmissions(); // refresh
     } catch (err) {
-      console.warn('⚠ Error syncing faculty to context:', err);
-      return false;
+      console.error('❌ Error adding faculty:', err);
     }
   };
 
-  // ================= ADD STUDENT =================
+  // ✅ Add Student (optional)
   const addStudentApp = async (studentData) => {
     try {
-      const cleanData = { ...studentData };
-
-      delete cleanData.id;
-      delete cleanData.admission_id;
-
-      const res = await fetch(`${API_BASE}/admissions/create`, {
+      await fetch(`${API_BASE}/admissions/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cleanData),
+        body: JSON.stringify(studentData),
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        alert(data.detail || 'Failed to add student');
-        return false;
-      }
-
       fetchStudentAdmissions();
-      return true;
     } catch (err) {
       console.error('❌ Error adding student:', err);
-      alert('Server error');
-      return false;
     }
   };
 
-  // ================= CONTEXT =================
   const value = {
     studentApps,
     facultyApps,
