@@ -162,7 +162,7 @@ export const roleMenuGroups = {
     },
     {
       title: 'Administration',
-      items: ['Fees', 'Payroll', 'Invoices'],
+      items: ['Fees', 'Payroll'], // Removed 'Invoices' for finance
     },
     {
       title: 'Intelligence',
