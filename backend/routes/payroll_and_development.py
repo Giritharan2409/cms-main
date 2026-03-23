@@ -1,7 +1,14 @@
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from datetime import datetime
 from bson import ObjectId
-from backend.db import db
+from backend.db import get_db
+from io import BytesIO
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
 from backend.models.payroll_and_development import (
     Payroll, ProfessionalDevelopmentActivity, ResearchContribution, 
     DepartmentInitiative, CareerPathway, FacultyPerformanceMetrics
@@ -10,19 +17,67 @@ from backend.models.payroll_and_development import (
 router = APIRouter(prefix="/api/faculty", tags=["faculty-payroll-development"])
 
 
+def _get_collection(name: str):
+    return get_db().get_collection(name)
+
+
+def _map_payroll_record(record: dict, faculty_id: str, semester: str, academic_year: str) -> dict:
+    tax = float(record.get("tax") or 0)
+    pf = float(record.get("pf") or 0)
+    professional_tax = float(record.get("professionalTax") or 0)
+    esi = float(record.get("esi") or 0)
+    tds = float(record.get("tds") or 0)
+    total_deductions = float(record.get("deductions") or 0)
+
+    return {
+        "faculty_id": faculty_id,
+        "semester": semester,
+        "academic_year": academic_year,
+        "base_salary": float(record.get("basicSalary") or 0),
+        "teaching_allowance": float(record.get("allowance") or 0),
+        "research_allowance": 0,
+        "performance_bonus": float(record.get("bonus") or 0),
+        "other_allowances": float(record.get("hra") or 0),
+        "allowances": float(record.get("hra") or 0) + float(record.get("allowance") or 0),
+        "total_earnings": float(record.get("grossPay") or 0),
+        "income_tax": tax,
+        "provident_fund": pf,
+        "professional_tax": professional_tax,
+        "other_deductions": max(total_deductions - (tax + pf + professional_tax + esi + tds), 0),
+        "total_deductions": total_deductions,
+        "net_salary": float(record.get("netPay") or 0),
+        "payment_date": record.get("paidDate") or None,
+        "source": "payroll",
+        "pay_period": record.get("payPeriodDetailed") or record.get("payMonth"),
+        "_id": str(record.get("_id", "")),
+    }
+
+
 # ============== PAYROLL ROUTES ==============
 
 @router.get("/{faculty_id}/payroll")
 async def get_payroll(faculty_id: str, semester: str, academic_year: str):
     """Get payroll information for a faculty member"""
     try:
-        payroll_collection = db.get_collection("faculty_payroll")
+        payroll_records = _get_collection("payroll")
+        existing_payroll = await payroll_records.find_one(
+            {"staffId": faculty_id},
+            sort=[("_id", -1)]
+        )
+
+        if existing_payroll:
+            return _map_payroll_record(existing_payroll, faculty_id, semester, academic_year)
+
+        payroll_collection = _get_collection("faculty_payroll")
         payroll = await payroll_collection.find_one({
             "faculty_id": faculty_id,
             "semester": semester,
             "academic_year": academic_year
         })
-        
+
+        if payroll:
+            return {**payroll, "_id": str(payroll.get("_id", ""))}
+
         if not payroll:
             # Create default payroll if not exists
             default_payroll = {
@@ -46,8 +101,6 @@ async def get_payroll(faculty_id: str, semester: str, academic_year: str):
             }
             result = await payroll_collection.insert_one(default_payroll)
             return {**default_payroll, "_id": str(result.inserted_id)}
-        
-        return {**payroll, "_id": str(payroll.get("_id", ""))}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -56,7 +109,7 @@ async def get_payroll(faculty_id: str, semester: str, academic_year: str):
 async def create_or_update_payroll(faculty_id: str, payroll_data: Payroll):
     """Create or update payroll information"""
     try:
-        payroll_collection = db.get_collection("faculty_payroll")
+        payroll_collection = _get_collection("faculty_payroll")
         
         payroll_dict = payroll_data.dict(by_alias=True)
         payroll_dict["faculty_id"] = faculty_id
@@ -81,7 +134,7 @@ async def create_or_update_payroll(faculty_id: str, payroll_data: Payroll):
 async def get_payroll_history(faculty_id: str, limit: int = Query(default=10, le=50)):
     """Get payroll history for a faculty member"""
     try:
-        payroll_collection = db.get_collection("faculty_payroll")
+        payroll_collection = _get_collection("faculty_payroll")
         payroll_records = await payroll_collection.find(
             {"faculty_id": faculty_id}
         ).sort("academic_year", -1).limit(limit).to_list(limit)
@@ -94,13 +147,167 @@ async def get_payroll_history(faculty_id: str, limit: int = Query(default=10, le
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/{faculty_id}/payroll/payslip")
+async def download_payslip(faculty_id: str, semester: str = None, academic_year: str = None):
+    """Download payslip as PDF"""
+    try:
+        payroll_collection = _get_collection("faculty_payroll")
+        
+        # Fetch payroll data
+        query = {"faculty_id": faculty_id}
+        if semester:
+            query["semester"] = semester
+        if academic_year:
+            query["academic_year"] = academic_year
+            
+        payroll = await payroll_collection.find_one(query, sort=[("_id", -1)])
+        
+        if not payroll:
+            # Try to get from payroll collection
+            payroll_records = _get_collection("payroll")
+            existing_payroll = await payroll_records.find_one(
+                {"staffId": faculty_id},
+                sort=[("_id", -1)]
+            )
+            if existing_payroll:
+                payroll = _map_payroll_record(existing_payroll, faculty_id, semester or "Current", academic_year or datetime.now().year)
+            else:
+                raise HTTPException(status_code=404, detail="Payroll data not found")
+        
+        # Create PDF
+        pdf_buffer = BytesIO()
+        doc = SimpleDocTemplate(pdf_buffer, pagesize=letter, rightMargin=0.5*inch, leftMargin=0.5*inch,
+                                topMargin=0.75*inch, bottomMargin=0.75*inch)
+        
+        elements = []
+        styles = getSampleStyleSheet()
+        
+        # Title
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=16,
+            textColor=colors.HexColor('#1162d4'),
+            spaceAfter=12,
+            alignment=1  # Center
+        )
+        elements.append(Paragraph("PAYSLIP", title_style))
+        elements.append(Spacer(1, 0.2*inch))
+        
+        # Faculty Info
+        info_data = [
+            ["Faculty ID:", payroll.get("faculty_id", "N/A")],
+            ["Semester:", payroll.get("semester", semester or "Current")],
+            ["Academic Year:", payroll.get("academic_year", academic_year or "N/A")],
+            ["Pay Period:", payroll.get("pay_period", "N/A")]
+        ]
+        
+        info_table = Table(info_data, colWidths=[2*inch, 4*inch])
+        info_table.setStyle(TableStyle([
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#1162d4')),
+            ('ROWBACKGROUNDS', (0, 0), (-1, -1), [colors.white, colors.HexColor('#f0f4f8')])
+        ]))
+        elements.append(info_table)
+        elements.append(Spacer(1, 0.2*inch))
+        
+        # Earnings
+        elements.append(Paragraph("EARNINGS", styles['Heading3']))
+        earnings_data = [
+            ["Description", "Amount (₹)"],
+            ["Base Salary", f"₹{payroll.get('base_salary', 0):,.2f}"],
+            ["Teaching Allowance", f"₹{payroll.get('teaching_allowance', 0):,.2f}"],
+            ["Research Allowance", f"₹{payroll.get('research_allowance', 0):,.2f}"],
+            ["Performance Bonus", f"₹{payroll.get('performance_bonus', 0):,.2f}"],
+            ["Other Allowances", f"₹{payroll.get('other_allowances', 0):,.2f}"],
+            ["TOTAL EARNINGS", f"₹{payroll.get('total_earnings', 0):,.2f}"]
+        ]
+        
+        earnings_table = Table(earnings_data, colWidths=[4*inch, 2*inch])
+        earnings_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1162d4')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
+            ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#e8f0ff')),
+            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+            ('GRID', (0, 0), (-1, -1), 1, colors.grey)
+        ]))
+        elements.append(earnings_table)
+        elements.append(Spacer(1, 0.2*inch))
+        
+        # Deductions
+        elements.append(Paragraph("DEDUCTIONS", styles['Heading3']))
+        deductions_data = [
+            ["Description", "Amount (₹)"],
+            ["Income Tax", f"₹{payroll.get('income_tax', 0):,.2f}"],
+            ["Provident Fund", f"₹{payroll.get('provident_fund', 0):,.2f}"],
+            ["Professional Tax", f"₹{payroll.get('professional_tax', 0):,.2f}"],
+            ["Other Deductions", f"₹{payroll.get('other_deductions', 0):,.2f}"],
+            ["TOTAL DEDUCTIONS", f"₹{payroll.get('total_deductions', 0):,.2f}"]
+        ]
+        
+        deductions_table = Table(deductions_data, colWidths=[4*inch, 2*inch])
+        deductions_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#ff6b6b')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
+            ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#ffe8e8')),
+            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+            ('GRID', (0, 0), (-1, -1), 1, colors.grey)
+        ]))
+        elements.append(deductions_table)
+        elements.append(Spacer(1, 0.3*inch))
+        
+        # Net Salary
+        net_data = [
+            ["NET SALARY (Take Home)", f"₹{payroll.get('net_salary', 0):,.2f}"]
+        ]
+        net_table = Table(net_data, colWidths=[4*inch, 2*inch])
+        net_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#22c55e')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
+            ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('PADDING', (0, 0), (-1, 0), 15)
+        ]))
+        elements.append(net_table)
+        
+        if payroll.get("payment_date"):
+            elements.append(Spacer(1, 0.2*inch))
+            payment_text = f"Payment Date: {payroll.get('payment_date')}"
+            elements.append(Paragraph(payment_text, styles['Normal']))
+        
+        # Build PDF
+        doc.build(elements)
+        pdf_buffer.seek(0)
+        
+        return StreamingResponse(
+            iter([pdf_buffer.getvalue()]),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=payslip_{faculty_id}_{academic_year or 'current'}.pdf"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ============== PROFESSIONAL DEVELOPMENT ROUTES ==============
 
 @router.post("/{faculty_id}/professional-development")
 async def add_professional_development(faculty_id: str, activity: ProfessionalDevelopmentActivity):
     """Record professional development activity"""
     try:
-        pd_collection = db.get_collection("professional_development")
+        pd_collection = _get_collection("professional_development")
         
         activity_dict = activity.dict(by_alias=True)
         activity_dict["faculty_id"] = faculty_id
@@ -120,7 +327,7 @@ async def get_professional_development(
 ):
     """Get professional development activities"""
     try:
-        pd_collection = db.get_collection("professional_development")
+        pd_collection = _get_collection("professional_development")
         
         query = {"faculty_id": faculty_id}
         if activity_type:
@@ -140,7 +347,7 @@ async def get_professional_development(
 async def get_pd_summary(faculty_id: str, academic_year: str):
     """Get professional development summary"""
     try:
-        pd_collection = db.get_collection("professional_development")
+        pd_collection = _get_collection("professional_development")
         
         activities = await pd_collection.find({"faculty_id": faculty_id}).to_list(None)
         
@@ -164,7 +371,7 @@ async def get_pd_summary(faculty_id: str, academic_year: str):
 async def add_research_contribution(faculty_id: str, research: ResearchContribution):
     """Record research contribution"""
     try:
-        research_collection = db.get_collection("research_contributions")
+        research_collection = _get_collection("research_contributions")
         
         research_dict = research.dict(by_alias=True)
         research_dict["faculty_id"] = faculty_id
@@ -180,7 +387,7 @@ async def add_research_contribution(faculty_id: str, research: ResearchContribut
 async def get_research_contributions(faculty_id: str, limit: int = Query(default=20, le=100)):
     """Get all research contributions"""
     try:
-        research_collection = db.get_collection("research_contributions")
+        research_collection = _get_collection("research_contributions")
         
         research_records = await research_collection.find(
             {"faculty_id": faculty_id}
@@ -198,7 +405,7 @@ async def get_research_contributions(faculty_id: str, limit: int = Query(default
 async def get_research_summary(faculty_id: str):
     """Get research summary statistics"""
     try:
-        research_collection = db.get_collection("research_contributions")
+        research_collection = _get_collection("research_contributions")
         
         research_records = await research_collection.find({"faculty_id": faculty_id}).to_list(None)
         
@@ -225,7 +432,7 @@ async def get_research_summary(faculty_id: str):
 async def create_career_pathway(faculty_id: str, pathway: CareerPathway):
     """Create career development pathway"""
     try:
-        pathway_collection = db.get_collection("career_pathways")
+        pathway_collection = _get_collection("career_pathways")
         
         pathway_dict = pathway.dict(by_alias=True)
         pathway_dict["faculty_id"] = faculty_id
@@ -241,7 +448,7 @@ async def create_career_pathway(faculty_id: str, pathway: CareerPathway):
 async def get_career_pathway(faculty_id: str):
     """Get career pathway"""
     try:
-        pathway_collection = db.get_collection("career_pathways")
+        pathway_collection = _get_collection("career_pathways")
         
         pathway = await pathway_collection.find_one({"faculty_id": faculty_id, "status": "Active"})
         
@@ -259,7 +466,7 @@ async def get_career_pathway(faculty_id: str):
 async def update_career_pathway(faculty_id: str, pathway_id: str, pathway: CareerPathway):
     """Update career pathway"""
     try:
-        pathway_collection = db.get_collection("career_pathways")
+        pathway_collection = _get_collection("career_pathways")
         
         pathway_dict = pathway.dict(by_alias=True)
         pathway_dict["updated_date"] = datetime.now()
@@ -285,7 +492,7 @@ async def update_career_pathway(faculty_id: str, pathway_id: str, pathway: Caree
 async def record_performance_metrics(faculty_id: str, metrics: FacultyPerformanceMetrics):
     """Record faculty performance metrics"""
     try:
-        metrics_collection = db.get_collection("faculty_performance_metrics")
+        metrics_collection = _get_collection("faculty_performance_metrics")
         
         metrics_dict = metrics.dict(by_alias=True)
         metrics_dict["faculty_id"] = faculty_id
@@ -305,7 +512,7 @@ async def record_performance_metrics(faculty_id: str, metrics: FacultyPerformanc
 async def get_performance_metrics(faculty_id: str, academic_year: str):
     """Get performance metrics"""
     try:
-        metrics_collection = db.get_collection("faculty_performance_metrics")
+        metrics_collection = _get_collection("faculty_performance_metrics")
         
         metrics = await metrics_collection.find_one({
             "faculty_id": faculty_id,
@@ -326,7 +533,7 @@ async def get_performance_metrics(faculty_id: str, academic_year: str):
 async def get_performance_metrics_history(faculty_id: str, limit: int = Query(default=5, le=10)):
     """Get performance metrics history"""
     try:
-        metrics_collection = db.get_collection("faculty_performance_metrics")
+        metrics_collection = _get_collection("faculty_performance_metrics")
         
         metrics_list = await metrics_collection.find(
             {"faculty_id": faculty_id}
@@ -346,7 +553,7 @@ async def get_performance_metrics_history(faculty_id: str, limit: int = Query(de
 async def create_initiative(department_id: str, initiative: DepartmentInitiative):
     """Create department initiative"""
     try:
-        initiative_collection = db.get_collection("department_initiatives")
+        initiative_collection = _get_collection("department_initiatives")
         
         initiative_dict = initiative.dict(by_alias=True)
         initiative_dict["department_id"] = department_id
@@ -362,7 +569,7 @@ async def create_initiative(department_id: str, initiative: DepartmentInitiative
 async def get_department_initiatives(department_id: str, limit: int = Query(default=20, le=100)):
     """Get department initiatives"""
     try:
-        initiative_collection = db.get_collection("department_initiatives")
+        initiative_collection = _get_collection("department_initiatives")
         
         initiatives = await initiative_collection.find(
             {"department_id": department_id}
@@ -380,7 +587,7 @@ async def get_department_initiatives(department_id: str, limit: int = Query(defa
 async def update_initiative(department_id: str, initiative_id: str, initiative: DepartmentInitiative):
     """Update department initiative"""
     try:
-        initiative_collection = db.get_collection("department_initiatives")
+        initiative_collection = _get_collection("department_initiatives")
         
         initiative_dict = initiative.dict(by_alias=True)
         

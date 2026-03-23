@@ -16,7 +16,7 @@ const API_BASE_URL = '/api';
 const profileTabs = [
   { id: 'overview', label: 'Overview', icon: User },
   { id: 'performance', label: 'Performance', icon: BarChart2 },
-  { id: 'payroll', label: 'Payroll', icon: DollarSign },
+  { id: 'payroll', label: 'Invoice', icon: DollarSign },
   { id: 'career', label: 'Career Path', icon: Target },
   { id: 'leave', label: 'Leave & Attendance', icon: Calendar }
 ];
