@@ -401,7 +401,7 @@ async def delete_admission(admission_id: str):
 # -----------------
 
 def _faculty_admissions_collection():
-    return get_db()["faculty_admissions"]
+    return get_db()["faculty"]
 
 
 async def _get_faculty_collection():

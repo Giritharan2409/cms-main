@@ -193,7 +193,7 @@ export default function AdmissionPage() {
               <thead>
                 <tr className="border-b-2 border-gray-200">
                   <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                    {activeTab === 'students' ? 'Application ID' : 'Staff ID'}
+                    {activeTab === 'students' ? 'Application ID' : 'Employee ID'}
                   </th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-700">Name</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-700">

@@ -789,17 +789,73 @@ async def create_faculty(faculty: Faculty):
     return serialize_doc(created_doc)
 
 
+async def _get_next_faculty_id():
+    db = get_db()
+    collection = db["faculty"]
+    # Find the highest employeeId with FAC prefix
+    cursor = collection.find({"employeeId": {"$regex": "^FAC"}}, {"employeeId": 1}).sort("employeeId", -1).limit(1)
+    async for doc in cursor:
+        last_id = doc.get("employeeId")
+        if last_id and last_id.startswith("FAC"):
+            try:
+                # Extract the number part
+                num_str = last_id[3:]
+                num = int(num_str)
+                return f"FAC{str(num + 1).zfill(3)}"
+            except (ValueError, IndexError):
+                pass
+    return "FAC001"
+
+
 @router.post("/admission/submit")
 async def submit_faculty_admission(faculty_data: dict = Body(...)):
     """Submit faculty admission from modal form"""
     collection = await get_faculty_collection()
     
-    # Allow duplicate submissions (no uniqueness check)
+    # Generate unique employeeId
+    employee_id = await _get_next_faculty_id()
+    faculty_data["employeeId"] = employee_id
+    faculty_data["id"] = employee_id  # For frontend consistency
+    faculty_data["password"] = employee_id # Default password is same as ID
+    faculty_data["created_at"] = datetime.now()
+    
+    # Insert into faculty collection
     result = await collection.insert_one(faculty_data)
     
     created_doc = await collection.find_one({"_id": result.inserted_id})
     return serialize_doc(created_doc)
 
+
+@router.post("/login")
+async def login_faculty(credentials: dict = Body(...)):
+    """Simple login for faculty members using Employee ID as username and password"""
+    user_id = credentials.get("userId")
+    password = credentials.get("password")
+    
+    if not user_id or not password:
+        raise HTTPException(status_code=400, detail="Missing credentials")
+        
+    collection = await get_faculty_collection()
+    user = await collection.find_one({
+        "$or": [
+            {"employeeId": user_id},
+            {"email": user_id}
+        ]
+    })
+    
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid Employee ID")
+        
+    # Check password (in this simple implementation, it's stored in the doc)
+    stored_password = user.get("password") or user.get("employeeId")
+    
+    if password != stored_password:
+        raise HTTPException(status_code=401, detail="Invalid password")
+        
+    return {
+        "status": "success",
+        "user": serialize_doc(user)
+    }
 
 @router.get("/{faculty_id}")
 async def get_faculty(faculty_id: str = Path(...)):

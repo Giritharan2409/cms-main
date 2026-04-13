@@ -250,7 +250,7 @@ export default function FacultyAdmissionModal({ isOpen, onClose }) {
       setPaymentDone(false);
       setCurrentStep(1);
       
-      alert(`✓ Faculty admission submitted successfully!\nApplication ID: ${responseData.id}`);
+      alert(`✓ Faculty admission submitted successfully!\n\nEmployee ID: ${responseData.employeeId || responseData.id}\n(Use this ID as both Username and Password to log in)`);
       onClose();
     } catch (err) {
       console.error('Error submitting faculty admission:', err);
@@ -379,27 +379,35 @@ export default function FacultyAdmissionModal({ isOpen, onClose }) {
               <div className="space-y-4">
                 <h2 className="text-xl font-bold text-gray-800 mb-4">Professional Details</h2>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Position/Role *</label>
-                  <input
-                    type="text"
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Designation *</label>
+                  <select
                     name="role"
                     value={formData.role}
                     onChange={handleInputChange}
-                    placeholder="e.g., Assistant Professor"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                  >
+                    <option value="">Select Designation</option>
+                    <option value="Professor">Professor</option>
+                    <option value="Associate Professor">Associate Professor</option>
+                    <option value="Assistant Professor">Assistant Professor</option>
+                    <option value="Lecturer">Lecturer</option>
+                  </select>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Department *</label>
-                    <input
-                      type="text"
+                    <select
                       name="department"
                       value={formData.department}
                       onChange={handleInputChange}
-                      placeholder="e.g., Computer Science"
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    >
+                      <option value="">Select Department</option>
+                      <option value="Computer Science">Computer Science</option>
+                      <option value="Electrical Engineering">Electrical Engineering</option>
+                      <option value="Mechanical Engineering">Mechanical Engineering</option>
+                      <option value="Information Technology">Information Technology</option>
+                    </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Years of Experience</label>
@@ -588,12 +596,12 @@ export default function FacultyAdmissionModal({ isOpen, onClose }) {
                       <strong>Email:</strong> {formData.email}
                     </p>
                     <p className="text-gray-600">
-                      <strong>Staff ID:</strong> STAFF{Math.floor(Math.random() * 1000)}
+                      <strong>Employee ID:</strong> (To be generated)
                     </p>
                   </div>
                   <div className="border-b pb-2">
                     <p className="text-gray-600">
-                      <strong>Role:</strong> {formData.role}
+                      <strong>Designation:</strong> {formData.role}
                     </p>
                     <p className="text-gray-600">
                       <strong>Department:</strong> {formData.department}
@@ -625,7 +633,7 @@ export default function FacultyAdmissionModal({ isOpen, onClose }) {
                 {/* Payment Info */}
                 <div className="bg-gray-100 rounded-lg p-4 mb-6">
                   <p className="text-sm text-gray-600">Amount: <span className="font-bold text-lg">₹1000</span></p>
-                  <p className="text-sm text-gray-600">Application ID: FAC386</p>
+                  <p className="text-sm text-gray-600">Application ID: FAC (Auto-generated)</p>
                 </div>
 
                 {/* Payment Method Display */}

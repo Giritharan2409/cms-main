@@ -42,7 +42,8 @@ export function getUserSession() {
     return null;
   }
 
-  if (!Object.prototype.hasOwnProperty.call(demoUsers, role) || demoUsers[role].userId !== userId) {
+  // Allow any authenticated user with a valid role.
+  if (!isAuthenticated || !role || !userId) {
     return null;
   }
 

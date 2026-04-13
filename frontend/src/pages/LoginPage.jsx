@@ -66,7 +66,28 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    window.setTimeout(() => {
+    window.setTimeout(async () => {
+      // 1. Try Dynamic Backend Login for Faculty
+      if (role === 'faculty') {
+        try {
+          const response = await fetch('/api/faculty/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: userId.trim(), password }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            createUserSession('faculty', data.user.employeeId);
+            navigate(`/dashboard?role=faculty`, { replace: true });
+            return;
+          }
+        } catch (err) {
+          console.error('Backend login error:', err);
+        }
+      }
+
+      // 2. Fallback to Demo Login
       const allowedUser = demoUsers[role];
       if (allowedUser.userId === userId.trim() && allowedUser.password === password) {
         createUserSession(role, userId.trim());
@@ -74,7 +95,7 @@ export default function LoginPage() {
         return;
       }
 
-      setError('Invalid credentials for selected role. Check the demo hint and try again.');
+      setError('Invalid credentials. Check your User ID and password.');
       setLoading(false);
     }, 1000);
   }

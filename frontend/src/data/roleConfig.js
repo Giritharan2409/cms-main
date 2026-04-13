@@ -1,4 +1,4 @@
-﻿export const demoUsers = {
+export const demoUsers = {
   student: { userId: 'STU-2024-1547', password: 'student123' },
   admin: { userId: 'ADM-0001', password: 'admin123' },
   faculty: { userId: 'FAC-204', password: 'faculty123' },
@@ -83,9 +83,9 @@ export const cmsRoles = {
     name: 'Arun Kumar',
     team: 'Accounts & Billing',
     focus: 'Billing',
-    primaryAction: 'Generate Invoices',
+    primaryAction: 'Manage Fees',
     secondaryAction: 'Run Payroll',
-    subtitle: 'Monitor fees, payroll, invoices, and financial compliance.',
+    subtitle: 'Monitor fees, payroll, and financial compliance.',
     stats: [
       { value: 'INR 2.4Cr', label: 'Fees Collected', sub: 'Current quarter' },
       { value: '148', label: 'Unpaid Invoices', sub: 'Requires follow-up' },
@@ -95,7 +95,7 @@ export const cmsRoles = {
     tasks: [
       { title: 'Send unpaid fee reminders', desc: 'Batch reminder to 148 accounts' },
       { title: 'Prepare payroll sheet', desc: 'Finalize before 25 March' },
-      { title: 'Reconcile invoice register', desc: 'Match 2nd week transactions' },
+      { title: 'Reconcile accounts', desc: 'Match 2nd week transactions' },
     ],
     alerts: [
       { title: 'Fee gateway delay', desc: '12 transactions pending confirmation' },
@@ -162,7 +162,7 @@ export const roleMenuGroups = {
     },
     {
       title: 'Administration',
-      items: ['Fees', 'Payroll', 'Invoices'],
+      items: ['Fees', 'Payroll'],
     },
     {
       title: 'Intelligence',
