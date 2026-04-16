@@ -65,15 +65,6 @@ function SettingsContent({ role, userId }) {
 
   return (
     <div className="user-settings-page">
-      <div className="user-settings-header">
-        <div>
-          <h1>MIT Connect User Settings</h1>
-          <p>
-            Role: <strong>{role.toUpperCase()}</strong> | User ID: <strong>{userId}</strong>
-          </p>
-        </div>
-      </div>
-
       <div className="user-settings-layout">
         <SettingsSidebar role={role} menuItems={menuItems} activeItemId={activeItem} onSelectItem={handleSelect} />
 

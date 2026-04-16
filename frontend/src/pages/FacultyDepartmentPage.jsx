@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
-import StatCard from '../components/StatCard';
+import KpiCard from '../components/KpiCard';
+import KpiGrid from '../components/KpiGrid';
 import { Building2, Users, BookOpen, Mail, MapPin, Share2, Edit, X, Save } from 'lucide-react';
 
 const API_BASE_URL = 'http://localhost:5000/api';
@@ -870,18 +871,9 @@ export default function FacultyDepartmentPage() {
   return (
     <Layout title="Departments">
       <div style={{ paddingBottom: '40px' }}>
-        {/* Header */}
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#1f2937', margin: '0 0 8px 0' }}>
-                Department Directory
-              </h1>
-              <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>
-                View department information and course offerings across the institute
-              </p>
-            </div>
-            <button
+        {/* Action Button */}
+        <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'flex-end' }}>
+          <button
               onClick={() => setIsAddOpen(true)}
               style={{
                 padding: '10px 20px',
@@ -902,41 +894,35 @@ export default function FacultyDepartmentPage() {
             >
               + Add Department
             </button>
-          </div>
         </div>
 
-        {/* Stats Grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '16px',
-          marginBottom: '24px'
-        }}>
-          <StatCard
+        {/* Stats Grid - Department Statistics */}
+        <KpiGrid>
+          <KpiCard
             icon="domain"
             label="Departments"
             value={stats.totalDepts.toString()}
-            color="blue"
+            colorScheme="blue"
           />
-          <StatCard
+          <KpiCard
             icon="person"
             label="Total Faculty"
             value={stats.totalFacultyAcross.toString()}
-            color="green"
+            colorScheme="green"
           />
-          <StatCard
+          <KpiCard
             icon="group"
             label="Total Students"
             value={stats.totalStudentsAcross.toString()}
-            color="purple"
+            colorScheme="emerald"
           />
-          <StatCard
+          <KpiCard
             icon="school"
             label="Total Courses"
             value={stats.totalCourses.toString()}
-            color="cyan"
+            colorScheme="cyan"
           />
-        </div>
+        </KpiGrid>
 
         {/* Department List and Details */}
         <div style={{

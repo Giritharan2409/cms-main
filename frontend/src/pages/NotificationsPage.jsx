@@ -10,12 +10,7 @@ export default function NotificationsPage() {
 
   return (
     <Layout title="Notifications">
-      <div style={{ marginBottom: 16, color: '#64748b', fontSize: 13 }}>
-        MIT Connect - <strong style={{ color: '#1e293b', textTransform: 'capitalize' }}>{role}</strong> Notifications
-      </div>
-      <div>
-        <NotificationCenter role={role} />
-      </div>
+      <NotificationCenter role={role} />
     </Layout>
   );
 }

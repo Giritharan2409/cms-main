@@ -1,9 +1,17 @@
 import { getUserSession } from '../auth/sessionController'
 import { cmsRoles } from '../data/roleConfig'
 import { useState } from 'react'
+import ProfileDropdown from './ProfileDropdown'
 
-export default function TopBar({ title, isSidebarVisible = true }) {
+export default function TopBar({ 
+  title, 
+  isSidebarVisible = true,
+  userId = 'N/A',
+  onProfilePrimaryAction,
+  onProfileSecondaryAction 
+}) {
   const [globalSearch, setGlobalSearch] = useState('')
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
   const session = getUserSession()
   const role = session?.role || 'student'
   const user = cmsRoles[role] || cmsRoles.student
@@ -44,18 +52,33 @@ export default function TopBar({ title, isSidebarVisible = true }) {
             <span className="material-symbols-outlined text-[24px]">settings</span>
           </button>
         </div>
-        <div className="flex items-center gap-4 border-l border-slate-100 pl-6 cursor-pointer group">
+        <div className="flex items-center gap-4 border-l border-slate-100 pl-6 cursor-pointer group relative">
           <div className="text-right hidden sm:block">
             <p className="text-sm font-bold text-[#1e293b]">{user.name}</p>
             <p className="text-[11px] font-bold text-[#64748b] uppercase tracking-wider">{user.label}</p>
           </div>
-          <div className="w-11 h-11 rounded-xl bg-slate-100 overflow-hidden border-2 border-white shadow-sm transition-transform group-hover:scale-105">
+          <button
+            type="button"
+            onClick={() => setIsProfileOpen(!isProfileOpen)}
+            className="w-11 h-11 rounded-xl bg-slate-100 overflow-hidden border-2 border-white shadow-sm transition-transform group-hover:scale-105 cursor-pointer"
+            aria-label="Open profile dropdown"
+            title="Open profile"
+          >
             <img 
               src="https://img.freepik.com/free-photo/young-bearded-man-with-striped-shirt_273609-5677.jpg" 
               alt="Profile" 
               className="w-full h-full object-cover"
             />
-          </div>
+          </button>
+          <ProfileDropdown
+            isOpen={isProfileOpen}
+            onClose={() => setIsProfileOpen(false)}
+            user={user}
+            userId={userId}
+            role={role}
+            onPrimaryAction={onProfilePrimaryAction}
+            onSecondaryAction={onProfileSecondaryAction}
+          />
         </div>
       </div>
     </header>

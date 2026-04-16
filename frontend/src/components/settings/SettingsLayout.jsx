@@ -12,7 +12,6 @@ import IntegrationSettings from './IntegrationSettings';
 import MonitoringDashboard from './MonitoringDashboard';
 import NotificationSettings from './NotificationSettings';
 import SecuritySettings from './SecuritySettings';
-import SettingsHeader from './SettingsHeader';
 import SettingsSidebar from './SettingsSidebar';
 import UserManagement from './UserManagement';
 
@@ -118,14 +117,6 @@ export default function SettingsLayout({ role, userId }) {
 
   return (
     <div className="settings-page">
-      <SettingsHeader
-        role={role}
-        userId={userId}
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        onBackToDashboard={() => navigate(`/dashboard?role=${encodeURIComponent(role)}`)}
-      />
-
       <div className="settings-shell">
         <SettingsSidebar
           sections={visibleSections}
@@ -136,16 +127,6 @@ export default function SettingsLayout({ role, userId }) {
         />
 
         <main className="settings-content">
-          <div className="settings-content-head">
-            <div>
-              <p className="settings-breadcrumb">
-                {roleLabel} Access / {selection?.section?.label || 'Settings'} / {selection?.child?.label || 'Overview'}
-              </p>
-              <h1>System Settings</h1>
-            </div>
-            <div className="settings-role-pill">{role.toUpperCase()} MODE</div>
-          </div>
-
           {renderSection()}
         </main>
       </div>

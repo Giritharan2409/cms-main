@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
+import KpiCard from '../components/KpiCard'
+import KpiGrid from '../components/KpiGrid'
 
 // ─── Tab Components ──────────────────────────────────────────────
 
@@ -836,7 +838,7 @@ export default function StudentDetailPage() {
   }
 
   return (
-    <Layout title={`Students / ${student.name}`}>
+    <Layout title="Student Profile">
       {/* Top Navigation Row */}
       <div className="flex items-center justify-between mb-8">
         <button 

@@ -2,6 +2,8 @@ import { useState, useMemo, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Layout from '../components/Layout';
+import KpiCard from '../components/KpiCard';
+import KpiGrid from '../components/KpiGrid';
 import { API_BASE } from '../api/apiBase';
 
 // Icons
