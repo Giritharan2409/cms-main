@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import Layout from '../components/Layout'
+import KpiCard from '../components/KpiCard'
+import KpiGrid from '../components/KpiGrid'
 import { getUserSession } from '../auth/sessionController'
 import {
   fetchAttendanceSummary,

@@ -115,18 +115,6 @@ export default function NotificationCenter({ role = 'student' }) {
 
   return (
     <div className="notification-center">
-      <div className="notification-center-header">
-        <h1>Notifications</h1>
-        <div className="notification-center-stats">
-          <span className="stat">
-            Total: <strong>{notifications.length}</strong>
-          </span>
-          <span className="stat">
-            Unread: <strong>{unreadCount}</strong>
-          </span>
-        </div>
-      </div>
-
       <div className="notification-center-toolbar">
         <div className="notification-center-search">
           <input

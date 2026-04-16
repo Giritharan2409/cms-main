@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Layout from '../components/Layout';
-import StatCard from '../components/StatCard';
+import KpiCard from '../components/KpiCard';
+import KpiGrid from '../components/KpiGrid';
 import { useAdmission } from '../context/AdmissionContext';
 import { getUserSession } from '../auth/sessionController';
 
@@ -81,26 +82,26 @@ export default function AdminAdministrationDashboard() {
             <span className="material-symbols-outlined text-2xl text-blue-600">person_add</span>
             Admission Management
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <StatCard
+          <KpiGrid className="md:grid-cols-3">
+            <KpiCard
               icon="group"
               label="Total Applications"
               value={stats.admission.totalAdmissions}
-              color="blue"
+              colorScheme="blue"
             />
-            <StatCard
+            <KpiCard
               icon="check_circle"
               label="Approved Applications"
               value={stats.admission.approvedAdmissions}
-              color="green"
+              colorScheme="green"
             />
-            <StatCard
+            <KpiCard
               icon="schedule"
               label="Pending Applications"
               value={stats.admission.pendingAdmissions}
-              color="orange"
+              colorScheme="orange"
             />
-          </div>
+          </KpiGrid>
         </div>
 
         {/* Fees Management Section */}
@@ -109,32 +110,32 @@ export default function AdminAdministrationDashboard() {
             <span className="material-symbols-outlined text-2xl text-green-600">receipt</span>
             Fees Management
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <StatCard
+          <KpiGrid>
+            <KpiCard
               icon="assign"
               label="Total Assigned"
               value={stats.fees.totalFeesAssigned}
-              color="blue"
+              colorScheme="blue"
             />
-            <StatCard
+            <KpiCard
               icon="check_circle"
               label="Paid Fees"
               value={stats.fees.feesPaid}
-              color="green"
+              colorScheme="green"
             />
-            <StatCard
+            <KpiCard
               icon="schedule"
               label="Pending Fees"
               value={stats.fees.feesPending}
-              color="orange"
+              colorScheme="orange"
             />
-            <StatCard
+            <KpiCard
               icon="trending_up"
               label="Fees Revenue"
               value={`₹${stats.fees.totalFeeRevenue.toLocaleString()}`}
-              color="purple"
+              colorScheme="purple"
             />
-          </div>
+          </KpiGrid>
         </div>
 
         {/* Payroll Management Section */}
@@ -143,20 +144,20 @@ export default function AdminAdministrationDashboard() {
             <span className="material-symbols-outlined text-2xl text-purple-600">receipt_long</span>
             Payroll Management
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <StatCard
+          <KpiGrid className="md:grid-cols-2">
+            <KpiCard
               icon="assignment"
               label="Total Payroll Records"
               value={stats.payroll.totalPayrollRecords}
-              color="blue"
+              colorScheme="blue"
             />
-            <StatCard
+            <KpiCard
               icon="money"
               label="Total Payroll Amount"
               value={`₹${stats.payroll.totalPayrollAmount.toLocaleString()}`}
-              color="green"
+              colorScheme="green"
             />
-          </div>
+          </KpiGrid>
         </div>
 
         {/* Quick Summary Cards */}

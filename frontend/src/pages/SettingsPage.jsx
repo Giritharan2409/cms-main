@@ -33,7 +33,7 @@ export default function SettingsPage() {
 
   if (role === 'student' || role === 'faculty') {
     return (
-      <Layout title="">
+      <Layout title="User Settings">
         <RoleGuard roles={['student', 'faculty']}>
           <UserSettingsPage role={role} userId={session.userId} />
         </RoleGuard>
@@ -43,7 +43,7 @@ export default function SettingsPage() {
 
   if (role === 'admin' || role === 'finance') {
     return (
-      <Layout title="">
+      <Layout title="System Settings">
         <RoleGuard roles={['admin', 'finance']}>
           <SettingsLayout role={role} userId={session.userId} />
         </RoleGuard>

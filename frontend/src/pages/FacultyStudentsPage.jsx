@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
-import StatCard from '../components/StatCard';
+import KpiCard from '../components/KpiCard';
+import KpiGrid from '../components/KpiGrid';
 import { Users, Search, Filter, BookOpen, Mail, Phone, Plus, X } from 'lucide-react';
 
 const API_BASE_URL = 'http://localhost:5000/api';
@@ -481,32 +482,26 @@ export default function FacultyStudentsPage() {
         </div>
 
         {/* Stats Grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '16px',
-          marginBottom: '24px'
-        }}>
-          <StatCard
+        <KpiGrid>
+          <KpiCard
             icon="group"
             label="Total Students"
             value={studentsList.length.toString()}
-            color="blue"
+            colorScheme="blue"
           />
-          <StatCard
+          <KpiCard
             icon="bolt"
             label="Active Students"
             value={stats.active.toString()}
-            color="green"
-            trend="Live"
+            colorScheme="green"
           />
-          <StatCard
+          <KpiCard
             icon="domain"
             label="Departments"
             value={stats.departments.toString()}
-            color="purple"
+            colorScheme="emerald"
           />
-        </div>
+        </KpiGrid>
 
         {/* Search and Filter Bar */}
         <div style={{

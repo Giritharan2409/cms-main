@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import KpiCard from '../KpiCard';
+import KpiGrid from '../KpiGrid';
 import { listRegistrations, listMarks, publishExamResults } from '../../api/examsApi';
 
 export default function ExamReportModal({ isOpen, onClose, exam }) {
@@ -107,24 +109,32 @@ export default function ExamReportModal({ isOpen, onClose, exam }) {
 
         <div className="p-6 space-y-6">
           {/* Summary Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-[#1162d4]/5 p-4 rounded-lg border border-[#1162d4]/20">
-              <p className="text-xs font-semibold text-[#1162d4] uppercase mb-1">Registered</p>
-              <p className="text-2xl font-bold text-slate-900">{stats.totalRegistered}</p>
-            </div>
-            <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
-              <p className="text-xs font-semibold text-emerald-600 uppercase mb-1">Evaluated</p>
-              <p className="text-2xl font-bold text-emerald-900">{stats.totalEvaluated}</p>
-            </div>
-            <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-              <p className="text-xs font-semibold text-orange-600 uppercase mb-1">Pending</p>
-              <p className="text-2xl font-bold text-orange-900">{stats.pending}</p>
-            </div>
-            <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-              <p className="text-xs font-semibold text-purple-600 uppercase mb-1">Pass Rate</p>
-              <p className="text-2xl font-bold text-purple-900">{stats.passRate}%</p>
-            </div>
-          </div>
+          <KpiGrid>
+            <KpiCard
+              icon="assignment"
+              label="Registered"
+              value={stats.totalRegistered}
+              colorScheme="blue"
+            />
+            <KpiCard
+              icon="done"
+              label="Evaluated"
+              value={stats.totalEvaluated}
+              colorScheme="emerald"
+            />
+            <KpiCard
+              icon="hourglass_top"
+              label="Pending"
+              value={stats.pending}
+              colorScheme="orange"
+            />
+            <KpiCard
+              icon="trending_up"
+              label="Pass Rate"
+              value={`${stats.passRate}%`}
+              colorScheme="purple"
+            />
+          </KpiGrid>
 
           {/* Performance Stats */}
           {stats.totalEvaluated > 0 && (

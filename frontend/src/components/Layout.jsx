@@ -2,7 +2,13 @@ import { useState } from 'react'
 import AcademicSidebar from './AcademicSidebar'
 import TopBar from './TopBar'
 
-export default function Layout({ children, title }) {
+export default function Layout({ 
+  children, 
+  title, 
+  userId = 'N/A',
+  onProfilePrimaryAction,
+  onProfileSecondaryAction 
+}) {
   const [isSidebarVisible, setIsSidebarVisible] = useState(true)
 
   function toggleSidebar() {
@@ -24,7 +30,13 @@ export default function Layout({ children, title }) {
       )}
 
       <main className={`flex-1 flex flex-col transition-all duration-300 ${isSidebarVisible ? 'ml-64' : 'ml-0'}`}>
-        <TopBar title={title} isSidebarVisible={isSidebarVisible} />
+        <TopBar 
+          title={title} 
+          isSidebarVisible={isSidebarVisible}
+          userId={userId}
+          onProfilePrimaryAction={onProfilePrimaryAction}
+          onProfileSecondaryAction={onProfileSecondaryAction}
+        />
         <div className="flex-1 p-8">
           {children}
         </div>
