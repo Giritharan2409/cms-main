@@ -4,10 +4,12 @@ import KpiCard from '../components/KpiCard';
 import KpiGrid from '../components/KpiGrid';
 import { getUserSession } from '../auth/sessionController';
 import { jsPDF } from 'jspdf';
+import { PageContainer, StatsSection } from '../components/common';
 
 export default function FeesPage() {
   const session = getUserSession();
-  const studentId = session?.userId;
+  const role = session?.role?.toLowerCase();
+  const studentId = role === 'student' ? session?.userId : null;
 
   const [feeAssignments, setFeeAssignments] = useState(
     JSON.parse(localStorage.getItem('fee_assignments') || '[]')
@@ -19,6 +21,7 @@ export default function FeesPage() {
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [selectedFee, setSelectedFee] = useState(null);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [updatingFeeId, setUpdatingFeeId] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState('');
   const [transactionId, setTransactionId] = useState('');
   const [paymentDetails, setPaymentDetails] = useState({
@@ -57,17 +60,52 @@ export default function FeesPage() {
     return () => window.removeEventListener('invoiceUpdated', handleInvoiceUpdate);
   }, []);
 
-  // Filter fees for current student
+  // Filter fees - if finance or admin, show all, if student show only theirs
   const studentFees = useMemo(() => {
     let fees = feeAssignments;
 
-    // Filter by student ID
-    if (studentId) {
+    if (role === 'student' && studentId) {
       fees = fees.filter((fee) => fee.studentId === studentId);
+    } else if (role !== 'finance' && role !== 'admin' && studentId) {
+       // fallback for other potential roles that might have a studentId
+       fees = fees.filter((fee) => fee.studentId === studentId);
     }
 
     return fees;
-  }, [feeAssignments, studentId]);
+  }, [feeAssignments, studentId, role]);
+
+  const handleStatusUpdate = (feeId, newStatus) => {
+    const updatedFees = feeAssignments.map((fee) =>
+      fee.id === feeId ? { ...fee, paymentStatus: newStatus.toLowerCase() } : fee
+    );
+    setFeeAssignments(updatedFees);
+    localStorage.setItem('fee_assignments', JSON.stringify(updatedFees));
+    window.dispatchEvent(new CustomEvent('feeAssignmentUpdated', { detail: updatedFees }));
+
+    // Sync with invoices
+    const invoices = JSON.parse(localStorage.getItem('admin_invoices') || '[]');
+    const existingInvoice = invoices.find((inv) => inv.generatedFrom === feeId);
+    if (existingInvoice) {
+      existingInvoice.paymentStatus = newStatus.charAt(0).toUpperCase() + newStatus.slice(1).toLowerCase();
+      existingInvoice.status = existingInvoice.paymentStatus;
+      localStorage.setItem('admin_invoices', JSON.stringify(invoices));
+      window.dispatchEvent(new CustomEvent('invoiceUpdated', { detail: invoices }));
+    }
+
+    setUpdatingFeeId(null);
+  };
+
+  const stats = useMemo(() => {
+    const totalAssigned = studentFees.length;
+    const paidCount = studentFees.filter((fee) => fee.paymentStatus?.toLowerCase() === 'paid').length;
+    const pendingCount = studentFees.filter((fee) => fee.paymentStatus?.toLowerCase() === 'pending').length;
+    const processingCount = studentFees.filter((fee) => fee.paymentStatus?.toLowerCase() === 'processing').length;
+    const totalRevenue = studentFees
+      .filter((fee) => fee.paymentStatus?.toLowerCase() === 'paid')
+      .reduce((sum, fee) => sum + (Number(fee.totalFee) || 0), 0);
+
+    return { totalAssigned, paidCount, pendingCount, processingCount, totalRevenue };
+  }, [studentFees]);
 
   const handlePayClick = (fee) => {
     setSelectedFee(fee);
@@ -329,8 +367,19 @@ export default function FeesPage() {
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-8 rounded-lg shadow-lg">
           <h1 className="text-3xl font-bold mb-2">Fee Management</h1>
-          <p className="text-blue-100">Track and pay semester fees</p>
+          <p className="text-blue-100">
+            {role === 'finance' ? 'Track and manage student fee statuses' : 'Track and pay semester fees'}
+          </p>
         </div>
+
+        {role === 'finance' && (
+          <StatsSection stats={[
+            { value: stats.totalAssigned, label: 'Total Assigned', icon: 'assignment' },
+            { value: stats.paidCount, label: 'Paid Fees', icon: 'check_circle' },
+            { value: stats.pendingCount, label: 'Pending Fees', icon: 'schedule' },
+            { value: stats.processingCount, label: 'Processing', icon: 'sync' },
+          ]} />
+        )}
 
         {/* Fee Cards Grid */}
         <div className="bg-white rounded-lg shadow p-6">
@@ -347,9 +396,11 @@ export default function FeesPage() {
                 <div
                   key={fee.id}
                   className={`rounded-lg shadow border-l-4 p-6 ${
-                    fee.paymentStatus === 'paid'
+                    fee.paymentStatus?.toLowerCase() === 'paid'
                       ? 'bg-green-50 border-l-green-500'
-                      : 'bg-orange-50 border-l-orange-500'
+                      : fee.paymentStatus?.toLowerCase() === 'processing'
+                        ? 'bg-blue-50 border-l-blue-500'
+                        : 'bg-orange-50 border-l-orange-500'
                   }`}
                 >
                   <div className="flex items-start justify-between mb-4">
@@ -358,12 +409,14 @@ export default function FeesPage() {
                     </span>
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        fee.paymentStatus === 'paid'
+                        fee.paymentStatus?.toLowerCase() === 'paid'
                           ? 'bg-green-100 text-green-800'
-                          : 'bg-orange-100 text-orange-800'
+                          : fee.paymentStatus?.toLowerCase() === 'processing'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-orange-100 text-orange-800'
                       }`}
                     >
-                      {fee.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
+                      {fee.paymentStatus ? fee.paymentStatus.charAt(0).toUpperCase() + fee.paymentStatus.slice(1) : 'Pending'}
                     </span>
                   </div>
 
@@ -422,20 +475,55 @@ export default function FeesPage() {
                   </div>
 
                   {/* Action Button */}
-                  {fee.paymentStatus === 'pending' ? (
-                    <button
-                      onClick={() => handlePayClick(fee)}
-                      className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition font-medium"
-                    >
-                      Pay Now
-                    </button>
+                  {role === 'finance' ? (
+                    <div className="space-y-4">
+                      {updatingFeeId === fee.id ? (
+                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 animate-in fade-in slide-in-from-top-2 duration-300">
+                          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Update Status</label>
+                          <select
+                            value={fee.paymentStatus?.toLowerCase()}
+                            onChange={(e) => handleStatusUpdate(fee.id, e.target.value)}
+                            className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none mb-3 shadow-sm hover:border-slate-300 transition-all cursor-pointer"
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="processing">Processing</option>
+                            <option value="paid">Paid</option>
+                          </select>
+                          <button
+                            onClick={() => setUpdatingFeeId(null)}
+                            className="w-full py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setUpdatingFeeId(fee.id)}
+                          className="w-full bg-slate-900 text-white py-3 rounded-xl hover:bg-slate-800 transition-all font-bold text-sm shadow-lg shadow-slate-200 flex items-center justify-center gap-2 group"
+                        >
+                          <span className="material-symbols-outlined text-sm group-hover:rotate-12 transition-transform">edit_note</span>
+                          Status Updation
+                        </button>
+                      )}
+                    </div>
                   ) : (
-                    <button
-                      onClick={() => handleViewInvoice(fee)}
-                      className="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition font-medium"
-                    >
-                      View Invoice
-                    </button>
+                    <>
+                      {fee.paymentStatus?.toLowerCase() === 'pending' || fee.paymentStatus?.toLowerCase() === 'processing' ? (
+                        <button
+                          onClick={() => handlePayClick(fee)}
+                          className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition font-medium"
+                        >
+                          Pay Now
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleViewInvoice(fee)}
+                          className="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition font-medium"
+                        >
+                          View Invoice
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               ))}

@@ -427,8 +427,8 @@ export default function PayrollPage({ noLayout = false }) {
             const baseSalary = SALARY_MAP[role] || 0;
             // Robust experience lookup: try experience_years, experience, or 0
             const expYears = Number(staff.experience_years || staff.experience || 0);
-            const expBonus = expYears * 4000;
-            const totalBasic = baseSalary + expBonus;
+            const expBonus = 0;
+            const totalBasic = baseSalary;
 
             // Default values
             const hra = Number(staff.hra || 0);
@@ -481,6 +481,20 @@ export default function PayrollPage({ noLayout = false }) {
         }
     };
 
+    const stats = useMemo(() => {
+        const totalNetPay = filteredData.reduce((sum, r) => sum + (r.netPay || 0), 0);
+        const paidCount = filteredData.filter(r => r.status === 'Paid').length;
+        const processingCount = filteredData.filter(r => r.status === 'Processing').length;
+        const draftCount = filteredData.filter(r => r.status === 'Draft').length;
+        return {
+            totalPayrolls: filteredData.length,
+            totalDisbursement: totalNetPay,
+            paidCount,
+            processingCount,
+            draftCount
+        };
+    }, [filteredData]);
+
     const inner = (
         <div className="payroll-view" style={{ animation: 'fadeIn 0.3s ease-out' }}>
             <div className="section-header">
@@ -493,6 +507,35 @@ export default function PayrollPage({ noLayout = false }) {
                         Run Payroll
                     </button>
                 </div>
+            </div>
+
+            <div style={{ marginBottom: 32 }}>
+                <KpiGrid>
+                    <KpiCard
+                        icon="payments"
+                        label="Total Net Pay"
+                        value={formatCurrency(stats.totalDisbursement)}
+                        colorScheme="emerald"
+                    />
+                    <KpiCard
+                        icon="check_circle"
+                        label="Paid Records"
+                        value={stats.paidCount}
+                        colorScheme="green"
+                    />
+                    <KpiCard
+                        icon="sync"
+                        label="Processing"
+                        value={stats.processingCount}
+                        colorScheme="blue"
+                    />
+                    <KpiCard
+                        icon="edit_note"
+                        label="Draft"
+                        value={stats.draftCount}
+                        colorScheme="orange"
+                    />
+                </KpiGrid>
             </div>
 
             <div className="content-card" style={{ marginBottom: 24 }}>
@@ -1095,7 +1138,7 @@ export default function PayrollPage({ noLayout = false }) {
                                         />
                                         <div style={{ flex: 1 }}>
                                             <div style={{ fontSize: 15, fontWeight: 600, color: '#1f2937' }}>{designation}</div>
-                                            <div style={{ fontSize: 12, color: '#6b7280' }}>Base: {formatCurrency(SALARY_MAP[designation])} + ₹4,000 /yr exp</div>
+                                            <div style={{ fontSize: 12, color: '#6b7280' }}>Base: {formatCurrency(SALARY_MAP[designation])}</div>
                                         </div>
                                     </label>
                                 ))}

@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import Layout from '../components/Layout';
 import { PageContainer, StatsSection, StatusBadge } from '../components/common';
+import KpiCard from '../components/KpiCard';
+import KpiGrid from '../components/KpiGrid';
 import { jsPDF } from 'jspdf';
 import { getUserSession } from '../auth/sessionController';
 
@@ -55,17 +57,22 @@ export default function AdminInvoicePage() {
 
   const stats = useMemo(() => {
     const totalInvoices = invoices.length;
-    const paidInvoices = invoices.filter((inv) => inv.paymentStatus === 'Paid').length;
-    const pendingInvoices = invoices.filter((inv) => inv.paymentStatus === 'Pending').length;
+    const paidInvoices = invoices.filter((inv) => inv.paymentStatus?.toLowerCase() === 'paid').length;
+    const processingInvoices = invoices.filter((inv) => inv.paymentStatus?.toLowerCase() === 'processing').length;
+    const pendingInvoices = invoices.filter((inv) => inv.paymentStatus?.toLowerCase() === 'pending').length;
+    
+    const totalPotential = invoices.reduce((sum, inv) => sum + (Number(inv.total) || 0), 0);
     const totalRevenue = invoices
-      .filter((inv) => inv.paymentStatus === 'Paid')
-      .reduce((sum, inv) => sum + (inv.total || 0), 0);
+      .filter((inv) => inv.paymentStatus?.toLowerCase() === 'paid')
+      .reduce((sum, inv) => sum + (Number(inv.total) || 0), 0);
 
     return {
       totalInvoices,
       paidInvoices,
+      processingInvoices,
       pendingInvoices,
       totalRevenue,
+      totalPotential
     };
   }, [invoices]);
 
@@ -279,12 +286,39 @@ export default function AdminInvoicePage() {
     <Layout title="Invoice Management">
       <PageContainer>
         {/* Statistics Cards */}
-        <StatsSection stats={[
-          { value: stats.totalInvoices, label: 'Total Invoices', icon: 'description' },
-          { value: stats.paidInvoices, label: 'Paid Invoices', icon: 'check_circle' },
-          { value: stats.pendingInvoices, label: 'Pending Invoices', icon: 'schedule' },
-          { value: `₹${stats.totalRevenue.toLocaleString()}`, label: 'Total Revenue', icon: 'trending_up' },
-        ]} />
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+          <KpiCard
+            icon="description"
+            label="Total Invoices"
+            value={stats.totalInvoices}
+            colorScheme="blue"
+          />
+          <KpiCard
+            icon="check_circle"
+            label="Paid"
+            value={stats.paidInvoices}
+            colorScheme="green"
+          />
+          <KpiCard
+            icon="sync"
+            label="Processing"
+            value={stats.processingInvoices}
+            colorScheme="cyan"
+          />
+          <KpiCard
+            icon="schedule"
+            label="Pending"
+            value={stats.pendingInvoices}
+            colorScheme="orange"
+          />
+          <KpiCard
+            icon="payments"
+            label="Total Revenue"
+            value={`₹${stats.totalRevenue.toLocaleString()}`}
+            colorScheme="emerald"
+          />
+        </div>
 
         {/* Main Table */}
         <div className="bg-white rounded-lg shadow p-6">
@@ -359,9 +393,11 @@ export default function AdminInvoicePage() {
                       <td className="py-3 px-4 font-semibold text-gray-900">₹{invoice.total?.toLocaleString()}</td>
                       <td className="py-3 px-4">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          invoice.paymentStatus === 'Paid'
+                          invoice.paymentStatus?.toLowerCase() === 'paid'
                             ? 'bg-green-100 text-green-800'
-                            : 'bg-orange-100 text-orange-800'
+                            : invoice.paymentStatus?.toLowerCase() === 'processing'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-orange-100 text-orange-800'
                         }`}>
                           {invoice.paymentStatus}
                         </span>

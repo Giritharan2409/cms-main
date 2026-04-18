@@ -192,6 +192,7 @@ export default function AdminFeesPage() {
   const stats = useMemo(() => {
     const totalAssigned = feeAssignments.length;
     const paidCount = feeAssignments.filter((fee) => fee.paymentStatus?.toLowerCase() === 'paid').length;
+    const processingCount = feeAssignments.filter((fee) => fee.paymentStatus?.toLowerCase() === 'processing').length;
     const pendingCount = feeAssignments.filter((fee) => fee.paymentStatus?.toLowerCase() === 'pending').length;
     const totalRevenue = feeAssignments
       .filter((fee) => fee.paymentStatus?.toLowerCase() === 'paid')
@@ -207,6 +208,7 @@ export default function AdminFeesPage() {
         <StatsSection stats={[
           { value: stats.totalAssigned, label: 'Total Assigned', icon: 'assign' },
           { value: stats.paidCount, label: 'Paid Fees', icon: 'check_circle' },
+          { value: stats.processingCount, label: 'In Processing', icon: 'sync' },
           { value: stats.pendingCount, label: 'Pending Fees', icon: 'schedule' },
           { value: `₹${stats.totalRevenue.toLocaleString()}`, label: 'Total Revenue', icon: 'trending_up' },
         ]} />
@@ -263,11 +265,13 @@ export default function AdminFeesPage() {
                     <p>
                       <span className="font-semibold">Payment Status:</span>
                       <span className={`ml-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
-                        assignment.paymentStatus === 'Paid'
+                        assignment.paymentStatus?.toLowerCase() === 'paid'
                           ? 'bg-green-100 text-green-800'
-                          : 'bg-orange-100 text-orange-800'
+                          : assignment.paymentStatus?.toLowerCase() === 'processing'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-orange-100 text-orange-800'
                       }`}>
-                        {assignment.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
+                        {assignment.paymentStatus ? assignment.paymentStatus.charAt(0).toUpperCase() + assignment.paymentStatus.slice(1) : 'Pending'}
                       </span>
                     </p>
                   </div>
