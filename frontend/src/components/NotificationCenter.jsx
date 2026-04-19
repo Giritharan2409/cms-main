@@ -113,10 +113,66 @@ export default function NotificationCenter({ role = 'student' }) {
 
   const unreadCount = notifications.filter(n => n.status === 'unread').length;
 
+  const mockFinanceNotifications = [
+    {
+      id: 'mock_fin_1',
+      title: 'Fee Payment Received',
+      message: 'Student John Anderson (STU-2024-1547) has successfully paid Semester 4 fees of ₹45,000.',
+      module: 'Finance',
+      priority: 'High',
+      status: 'unread',
+      createdAt: new Date().toISOString(),
+      senderRole: 'system',
+      relatedData: { studentId: 'STU-2024-1547', amount: '₹45,000' }
+    },
+    {
+      id: 'mock_fin_2',
+      title: 'Audit Warning',
+      message: 'Quarterly financial audit is scheduled for next Monday. Please ensure all ledger entries are up to date.',
+      module: 'Administrative',
+      priority: 'Critical',
+      status: 'unread',
+      createdAt: new Date(Date.now() - 3600000).toISOString(),
+      senderRole: 'admin'
+    },
+    {
+      id: 'mock_fin_3',
+      title: 'Scholarship Batch Processed',
+      message: 'A batch of 12 merit scholarships has been approved for disbursement.',
+      module: 'Finance',
+      priority: 'Medium',
+      status: 'read',
+      createdAt: new Date(Date.now() - 86400000).toISOString(),
+      senderRole: 'system'
+    }
+  ];
+
+  const displayNotifications = notifications.length > 0 ? notifications : (role === 'finance' ? mockFinanceNotifications : []);
+
   return (
     <div className="notification-center">
+      <div className="notification-center-header-v2">
+        <div className="notification-header-left">
+          <span className="material-symbols-outlined header-icon">notifications_active</span>
+          <div>
+            <h1>Notifications</h1>
+            <p>Manage your alerts and financial updates</p>
+          </div>
+        </div>
+        <div className="notification-header-stats">
+          <div className="stat-pill unread">
+            <span className="dot"></span>
+            {unreadCount || (role === 'finance' ? 2 : 0)} Unread
+          </div>
+          <div className="stat-pill total">
+            {displayNotifications.length} Total
+          </div>
+        </div>
+      </div>
+
       <div className="notification-center-toolbar">
         <div className="notification-center-search">
+          <span className="material-symbols-outlined search-icon">search</span>
           <input
             type="text"
             placeholder="Search notifications..."
@@ -133,7 +189,7 @@ export default function NotificationCenter({ role = 'student' }) {
             className="notification-filter-select"
           >
             {CATEGORIES.map(cat => (
-              <option key={cat.value} value={cat.value}>{cat.label}</option>
+              <option key={cat.value} value={cat.value}>{cat.label} Category</option>
             ))}
           </select>
 
@@ -143,7 +199,7 @@ export default function NotificationCenter({ role = 'student' }) {
             className="notification-filter-select"
           >
             {PRIORITIES.map(pri => (
-              <option key={pri.value} value={pri.value}>{pri.label}</option>
+              <option key={pri.value} value={pri.value}>{pri.label} Priority</option>
             ))}
           </select>
 
@@ -165,6 +221,7 @@ export default function NotificationCenter({ role = 'student' }) {
               onClick={handleMarkAllAsRead}
               title="Mark all notifications as read"
             >
+              <span className="material-symbols-outlined">done_all</span>
               Mark All Read
             </button>
           )}
@@ -172,8 +229,9 @@ export default function NotificationCenter({ role = 'student' }) {
             className="notification-center-btn secondary"
             onClick={handleClearAll}
             title="Clear all notifications"
-            disabled={notifications.length === 0}
+            disabled={displayNotifications.length === 0}
           >
+            <span className="material-symbols-outlined">delete_sweep</span>
             Clear All
           </button>
           {(role === 'admin' || role === 'faculty') && (
@@ -181,7 +239,8 @@ export default function NotificationCenter({ role = 'student' }) {
               className="notification-center-btn primary"
               onClick={() => setShowCreateForm(!showCreateForm)}
             >
-              {showCreateForm ? 'Cancel' : 'Create Notification'}
+              <span className="material-symbols-outlined">{showCreateForm ? 'close' : 'add'}</span>
+              {showCreateForm ? 'Cancel' : 'Create'}
             </button>
           )}
         </div>
@@ -195,16 +254,27 @@ export default function NotificationCenter({ role = 'student' }) {
       )}
 
       <div className="notification-center-content">
-        {loading ? (
-          <div className="notification-center-loading">Loading notifications...</div>
-        ) : notifications.length === 0 ? (
-          <div className="notification-center-empty">
-            <p>No notifications found</p>
-            {searchQuery && <small>Try adjusting your search filters</small>}
+        {loading && notifications.length === 0 ? (
+          <div className="notification-center-loading">
+            <div className="loader"></div>
+            <p>Fetching alerts...</p>
+          </div>
+        ) : displayNotifications.length === 0 ? (
+          <div className="notification-center-empty-v2">
+            <div className="empty-icon-wrap">
+              <span className="material-symbols-outlined">notifications_off</span>
+            </div>
+            <h3>All caught up!</h3>
+            <p>No new notifications at the moment.</p>
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} className="clear-search-btn">
+                Clear Filters
+              </button>
+            )}
           </div>
         ) : (
           <div className="notification-list-container">
-            {notifications.map(notification => (
+            {displayNotifications.map(notification => (
               <NotificationCard
                 key={notification.id}
                 notification={notification}

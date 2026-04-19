@@ -106,7 +106,7 @@ export const roleMenuGroups = {
   student: [
     {
       title: 'Overview',
-      items: ['Dashboard', 'My Courses', 'Department'],
+      items: ['Dashboard', 'Department'],
     },
     {
       title: 'Academics',

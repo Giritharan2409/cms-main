@@ -4,7 +4,6 @@ import Layout from '../components/Layout'
 const TITLE_BY_PATH = {
   '/faculty': 'Faculty',
   '/department': 'Department',
-  '/my-courses': 'My Courses',
   '/reports': 'Reports',
 }
 

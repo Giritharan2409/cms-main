@@ -21,7 +21,6 @@ const iconMap = {
   Analytics: 'query_stats',
   Notifications: 'notifications',
   Settings: 'settings',
-  'My Courses': 'menu_book',
 }
 
 const routeMap = {
@@ -42,7 +41,6 @@ const routeMap = {
   Analytics: '/analytics',
   Notifications: '/notifications',
   Settings: '/settings',
-  'My Courses': '/my-courses',
 }
 
 export default function AcademicSidebar({ isSidebarVisible = true, onToggleSidebar }) {

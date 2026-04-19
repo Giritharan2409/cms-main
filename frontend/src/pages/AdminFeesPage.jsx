@@ -198,7 +198,7 @@ export default function AdminFeesPage() {
       .filter((fee) => fee.paymentStatus?.toLowerCase() === 'paid')
       .reduce((sum, fee) => sum + (fee.totalFee || 0), 0);
 
-    return { totalAssigned, paidCount, pendingCount, totalRevenue };
+    return { totalAssigned, paidCount, processingCount, pendingCount, totalRevenue };
   }, [feeAssignments]);
 
   return (
@@ -206,7 +206,7 @@ export default function AdminFeesPage() {
       <PageContainer>
         {/* Statistics Cards */}
         <StatsSection stats={[
-          { value: stats.totalAssigned, label: 'Total Assigned', icon: 'assign' },
+          { value: stats.totalAssigned, label: 'Total Assigned', icon: 'assignment' },
           { value: stats.paidCount, label: 'Paid Fees', icon: 'check_circle' },
           { value: stats.processingCount, label: 'In Processing', icon: 'sync' },
           { value: stats.pendingCount, label: 'Pending Fees', icon: 'schedule' },

@@ -23,7 +23,82 @@ DEV_STORE = {
         {"day": "Thu", "attendance": 86},
         {"day": "Fri", "attendance": 94},
     ],
-    "notifications": [],
+    "notifications": [
+        {
+            "id": "notif_fin_001",
+            "title": "Semester Fee Collection Active",
+            "message": "Fee collection for Semester 4 (2025-26) is now open. Please start tracking student payments.",
+            "senderRole": "admin",
+            "receiverRole": "finance",
+            "module": "Finance",
+            "priority": "High",
+            "status": "unread",
+            "createdAt": "2026-04-19T08:30:00Z",
+            "relatedData": {
+                "semester": "Semester 4",
+                "total_target": "₹45,00,000"
+            }
+        },
+        {
+            "id": "notif_fin_002",
+            "title": "Payroll Disbursed - Staff",
+            "message": "Monthly salary for all teaching and non-teaching staff has been credited to accounts.",
+            "senderRole": "system",
+            "receiverRole": "finance",
+            "module": "Finance",
+            "priority": "Medium",
+            "status": "read",
+            "createdAt": "2026-04-18T16:45:00Z",
+            "relatedData": {
+                "month": "March 2026",
+                "staff_count": 142
+            }
+        },
+        {
+            "id": "notif_fin_003",
+            "title": "Audit Report Overdue",
+            "message": "The internal audit report for Q3 is overdue. Please submit it by Friday EOD.",
+            "senderRole": "admin",
+            "receiverRole": "finance",
+            "module": "Administrative",
+            "priority": "Critical",
+            "status": "unread",
+            "createdAt": "2026-04-19T09:15:00Z"
+        },
+        {
+            "id": "notif_fin_004",
+            "title": "Scholarship Approval Needed",
+            "message": "15 new merit scholarship applications are awaiting financial verification.",
+            "senderRole": "system",
+            "receiverRole": "finance",
+            "module": "Finance",
+            "priority": "High",
+            "status": "unread",
+            "createdAt": "2026-04-19T07:20:00Z"
+        },
+        {
+            "id": "notif_fin_005",
+            "title": "Vendor Payment Pending",
+            "message": "Payment for lab equipment maintenance (Invoice #INV-2942) is pending for 3 days.",
+            "senderRole": "system",
+            "receiverRole": "finance",
+            "module": "Alerts",
+            "priority": "Medium",
+            "status": "unread",
+            "createdAt": "2026-04-17T11:00:00Z"
+        },
+        {
+            "id": "notif_sys_001",
+            "title": "System Maintenance",
+            "message": "The Finance portal will be down for scheduled maintenance on Sunday, April 20th, from 02:00 AM to 04:00 AM.",
+            "senderRole": "admin",
+            "receiverRole": "ALL",
+            "module": "System",
+            "priority": "Medium",
+            "status": "unread",
+            "createdAt": "2026-04-19T05:00:00Z"
+        }
+    ],
     "students": [],
     "od_requests": [],
 }

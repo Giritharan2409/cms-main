@@ -79,7 +79,6 @@ export default function App() {
         <Route path="/faculty" element={<ProtectedRoute><FacultyPage /></ProtectedRoute>} />
         <Route path="/faculty/:id" element={<ProtectedRoute><FacultyProfilePage /></ProtectedRoute>} />
         <Route path="/department" element={<ProtectedRoute><FacultyDepartmentPage /></ProtectedRoute>} />
-        <Route path="/my-courses" element={<ProtectedRoute><ComingSoonPage /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute><ComingSoonPage /></ProtectedRoute>} />
         <Route path="/admission" element={<ProtectedRoute><AdmissionPage /></ProtectedRoute>} />
         <Route path="/fees" element={<ProtectedRoute><FeesPage /></ProtectedRoute>} />
