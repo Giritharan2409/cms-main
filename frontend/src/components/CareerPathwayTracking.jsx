@@ -138,7 +138,7 @@ export default function CareerPathwayTracking({ facultyId }) {
       {pathway && !editMode && (
         <>
           {/* Career Journey Overview */}
-          <div className="bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-xl border-2 border-green-200">>
+          <div className="bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-xl border-2 border-green-200">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-lg text-slate-900">Career Development Pathway</h3>
               <button
