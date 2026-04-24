@@ -35,11 +35,28 @@ function LockIcon() {
   );
 }
 
+function EyeOpenIcon() {
+  return (
+    <svg className="password-toggle-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
+    </svg>
+  );
+}
+
+function EyeClosedIcon() {
+  return (
+    <svg className="password-toggle-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M11.83 9L5.5 2.5c-1.71 1.71-3.29 4.03-4.27 6.5 2.05 4.31 6.5 7.5 11.5 7.5 1.66 0 3.26-.29 4.74-.84l-1.5-1.5c-1.05.17-2.16.25-3.27.25-4.76 0-9.27-3.11-11-7.5 1.31-2.65 3.03-4.96 5.21-6.5L3.07 1.06 4.5 2.5 21 19l-1.44 1.44L11.83 9zm-1.83 1zM19.59 13.5c.75-.88 1.41-1.87 1.97-2.95-2.05-4.31-6.5-7.5-11.5-7.5-1.26 0-2.49.16-3.69.45l2.8 2.8c.37-.05.72-.14 1.09-.14 2.76 0 5 2.24 5 5 0 .42-.05.82-.14 1.21l3.47 3.47z" />
+    </svg>
+  );
+}
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const [role, setRole] = useState('student');
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -169,7 +186,7 @@ export default function LoginPage() {
             ))}
           </div>
 
-          <form onSubmit={handleSubmit} noValidate>
+          <form onSubmit={handleSubmit} noValidate autoComplete="off">
             <div className="form-group role-select-hidden">
               <label htmlFor="role">Role</label>
               <div className="input-wrap">
@@ -192,7 +209,7 @@ export default function LoginPage() {
                   id="userId"
                   name="userId"
                   placeholder="e.g. STU-2024-1547"
-                  autoComplete="username"
+                  autoComplete="off"
                   value={userId}
                   onChange={(event) => setUserId(event.target.value)}
                   required
@@ -202,18 +219,27 @@ export default function LoginPage() {
 
             <div className="form-group">
               <label htmlFor="password">Password</label>
-              <div className="input-wrap">
+              <div className="input-wrap password-input-wrap">
                 <LockIcon />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   id="password"
                   name="password"
                   placeholder="Enter your password"
-                  autoComplete="current-password"
+                  autoComplete="off"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   required
                 />
+                <button
+                  type="button"
+                  className="password-toggle-btn"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeClosedIcon /> : <EyeOpenIcon />}
+                </button>
               </div>
             </div>
 
