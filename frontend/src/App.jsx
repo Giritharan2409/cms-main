@@ -26,6 +26,9 @@ import FacultyPage from './pages/FacultyPage';
 import FacultyProfilePage from './pages/FacultyProfilePage';
 import FacultyDepartmentPage from './pages/FacultyDepartmentPage';
 import ErrorBoundary from './components/ErrorBoundary';
+import AddMemberSelectionPage from './pages/AddMemberSelectionPage';
+import AddStudentPage from './pages/AddStudentPage';
+import AddFacultyPage from './pages/AddFacultyPage';
 
 export default function App() {
   const session = getUserSession();
@@ -81,6 +84,9 @@ export default function App() {
         <Route path="/department" element={<ProtectedRoute><FacultyDepartmentPage /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute><ComingSoonPage /></ProtectedRoute>} />
         <Route path="/admission" element={<ProtectedRoute><AdmissionPage /></ProtectedRoute>} />
+        <Route path="/add-member" element={<ProtectedRoute><AddMemberSelectionPage /></ProtectedRoute>} />
+        <Route path="/add-student" element={<ProtectedRoute><AddStudentPage /></ProtectedRoute>} />
+        <Route path="/add-faculty" element={<ProtectedRoute><AddFacultyPage /></ProtectedRoute>} />
         <Route path="/fees" element={<ProtectedRoute><FeesPage /></ProtectedRoute>} />
         <Route path="/admin-fees" element={<ProtectedRoute><AdminFeesPage /></ProtectedRoute>} />
         <Route path="/invoices" element={<ProtectedRoute><InvoicePage /></ProtectedRoute>} />

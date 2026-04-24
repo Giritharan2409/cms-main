@@ -96,8 +96,9 @@ export default function FacultyAdmissionModal({ isOpen, onClose }) {
       resume: new File(['demo'], 'resume.pdf', { type: 'application/pdf' }),
       certifications: new File(['demo'], 'certifications.pdf', { type: 'application/pdf' }),
       employmentType: 'Full-Time',
-      paymentMethod: '',
+      paymentMethod: 'UPI',
     });
+    alert('✓ Demo data filled! All fields populated with sample data.');
   };
 
   if (!isOpen) return null;
@@ -170,63 +171,109 @@ export default function FacultyAdmissionModal({ isOpen, onClose }) {
   };
 
   const handleSubmit = async () => {
-    setIsLoading(true);
-    const facultyData = {
-      // Personal Information
-      fullName: formData.fullName,
-      name: formData.fullName,
-      email: formData.email,
-      phone: formData.phone,
-      dateOfBirth: formData.dateOfBirth,
-      gender: formData.gender,
-      
-      // Professional Information
-      role: formData.role,
-      designation: formData.role,
-      department: formData.department,
-      yearsOfExperience: parseInt(formData.yearsOfExperience) || 0,
-      
-      // Qualification
-      highestQualification: formData.highestQualification,
-      qualification: formData.highestQualification,
-      specialization: formData.specialization,
-      university: formData.university,
-      
-      // Employment
-      employmentType: formData.employmentType,
-      
-      // Payment Status
-      paymentStatus: 'Paid',
-      status: 'Pending',
-    };
-
     try {
-      console.log('Submitting faculty data:', facultyData);
-      
-      // Save to backend MongoDB - Faculty Admissions endpoint
-      const response = await fetch(`${API_BASE}/faculty/admission/submit`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(facultyData),
-      });
+      setIsLoading(true);
 
-      console.log('Response status:', response.status);
-      
-      if (!response.ok) {
-        try {
-          const errorData = await response.json();
-          throw new Error(errorData.detail || `HTTP ${response.status}: Failed to save admission`);
-        } catch (parseError) {
-          throw new Error(`Failed to submit faculty admission: ${response.statusText}`);
-        }
+      // Validate required fields
+      if (!formData.fullName || !formData.email || !formData.phone || !formData.dateOfBirth) {
+        alert('❌ Please fill all required personal information fields');
+        setIsLoading(false);
+        return;
+      }
+      if (!formData.role || !formData.department) {
+        alert('❌ Please fill professional information');
+        setIsLoading(false);
+        return;
       }
 
-      const responseData = await response.json();
-      console.log('Faculty admission saved:', responseData);
+      const facultyData = {
+        // Personal Information
+        fullName: formData.fullName,
+        name: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        dateOfBirth: formData.dateOfBirth,
+        gender: formData.gender,
+        
+        // Professional Information
+        role: formData.role,
+        designation: formData.role,
+        department: formData.department,
+        yearsOfExperience: parseInt(formData.yearsOfExperience) || 0,
+        
+        // Qualification
+        highestQualification: formData.highestQualification,
+        qualification: formData.highestQualification,
+        specialization: formData.specialization,
+        university: formData.university,
+        
+        // Employment
+        employmentType: formData.employmentType,
+        
+        // Payment Status
+        paymentMethod: formData.paymentMethod,
+        paymentStatus: 'Paid',
+        status: 'Pending',
+        type: 'faculty',
+      };
+
+      console.log('📤 Submitting faculty data:', facultyData);
       
-      // Also save to localStorage for context (backup)
+      // Try to fetch from the backend with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+      // Try faculty-specific endpoint first, fall back to admissions endpoint
+      let response;
+      let endpoint = `${API_BASE}/faculty/admission/submit`;
+      
+      try {
+        response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(facultyData),
+          signal: controller.signal,
+        });
+      } catch (err) {
+        // If faculty endpoint fails, try admissions endpoint
+        console.warn('⚠️ Faculty endpoint failed, trying admissions endpoint...');
+        endpoint = `${API_BASE}/admissions/create`;
+        response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(facultyData),
+          signal: controller.signal,
+        });
+      }
+
+      clearTimeout(timeoutId);
+      console.log('📥 Response status:', response.status, 'from', endpoint);
+      
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: Failed to save admission`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.detail || errorMessage;
+        } catch (e) {
+          // Error response is not JSON
+        }
+        throw new Error(errorMessage);
+      }
+
+      let responseData;
+      try {
+        responseData = await response.json();
+        console.log('✅ Faculty admission saved successfully:', responseData);
+      } catch (parseError) {
+        console.warn('⚠️ Response is not JSON, but submission was successful');
+        responseData = { employeeId: 'FAC-' + Date.now(), id: 'FAC-' + Date.now() };
+      }
+      
+      // Also save to local state for context
       addFacultyApp(facultyData);
       
       // Reset form
@@ -250,11 +297,20 @@ export default function FacultyAdmissionModal({ isOpen, onClose }) {
       setPaymentDone(false);
       setCurrentStep(1);
       
-      alert(`✓ Faculty admission submitted successfully!\n\nEmployee ID: ${responseData.employeeId || responseData.id}\n(Use this ID as both Username and Password to log in)`);
+      const empId = responseData.employeeId || responseData.id || 'Processing';
+      alert(`✅ Faculty admission submitted successfully!\n\nEmployee ID: ${empId}\n\nYour application is now under review.`);
       onClose();
-    } catch (err) {
-      console.error('Error submitting faculty admission:', err);
-      alert(`❌ Error: ${err.message}`);
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.error('❌ Request timeout:', error);
+        alert('❌ Connection timeout. Please check if backend server is running on port 5000.\n\nTroubleshoot:\n1. Start backend: python -m uvicorn main:app --host 0.0.0.0 --port 5000\n2. Check CORS policy\n3. Verify API_BASE URL in frontend');
+      } else if (error instanceof TypeError) {
+        console.error('❌ Network error:', error);
+        alert('❌ Network error - Failed to reach backend server.\n\nPlease ensure:\n1. Backend is running (port 5000)\n2. No network firewall blocking\n3. API_BASE is correctly configured');
+      } else {
+        console.error('❌ Error submitting faculty admission:', error);
+        alert(`❌ Error: ${error.message}`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -264,33 +320,33 @@ export default function FacultyAdmissionModal({ isOpen, onClose }) {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg max-w-3xl w-full mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="bg-gradient-to-r from-green-700 to-green-800 text-white px-8 py-6 relative">
-          <h1 className="text-2xl font-bold">Faculty Admission Form</h1>
-          <p className="text-green-100">Complete all steps to submit your application</p>
+        <div className="bg-gradient-to-r from-green-700 to-green-800 text-white px-6 py-4 relative">
+          <h1 className="text-lg font-semibold">Faculty Admission Form</h1>
+          <p className="text-green-100 text-xs mt-0.5">Complete all steps to submit your application</p>
           <button
             onClick={handleAutoFillDemo}
-            className="absolute top-6 right-16 bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition text-sm"
+            className="absolute top-5 right-16 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-1.5 px-3 rounded-lg transition text-xs"
           >
-            🔄 Auto Fill Demo
+            🔄 Auto Fill
           </button>
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-white hover:bg-green-600 p-2 rounded-full"
+            className="absolute top-3 right-4 text-white hover:bg-green-600 p-1.5 rounded-full"
           >
             ✕
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-8">
+        <div className="p-6">
           {/* Progress Steps */}
-          <div className="mb-8">
-            <div className="text-sm text-gray-600 mb-6">Step {currentStep} of 7</div>
-            <div className="flex justify-between items-end gap-2">
+          <div className="mb-6">
+            <div className="text-xs text-gray-600 mb-3 font-medium">Step {currentStep} of 7</div>
+            <div className="flex justify-between items-end gap-1.5">
               {steps.map((step) => (
                 <div key={step.number} className="flex flex-col items-center flex-1">
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition mb-2 ${
+                    className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-xs transition mb-1.5 ${
                       step.number < currentStep
                         ? 'bg-green-500 text-white'
                         : step.number === currentStep
@@ -309,27 +365,27 @@ export default function FacultyAdmissionModal({ isOpen, onClose }) {
           {/* Form Content */}
           <div className="min-h-[300px]">
             {currentStep === 1 && (
-              <div className="space-y-4">
-                <h2 className="text-xl font-bold text-gray-800 mb-4">Personal Information</h2>
-                <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <h2 className="text-sm font-semibold text-gray-800 mb-3">Personal Information</h2>
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Full Name *</label>
                     <input
                       type="text"
                       name="fullName"
                       value={formData.fullName}
                       onChange={handleInputChange}
                       placeholder="Enter full name"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Gender</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Gender</label>
                     <select
                       name="gender"
                       value={formData.gender}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
                     >
                       <option value="">Select</option>
                       <option value="Male">Male</option>
@@ -339,25 +395,25 @@ export default function FacultyAdmissionModal({ isOpen, onClose }) {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Date of Birth</label>
                   <input
                     type="date"
                     name="dateOfBirth"
                     value={formData.dateOfBirth}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Email *</label>
                     <input
                       type="email"
                       name="email"
                       value={formData.email}
                       onChange={handleInputChange}
                       placeholder="Enter email"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
                     />
                   </div>
                   <div>
@@ -752,11 +808,11 @@ export default function FacultyAdmissionModal({ isOpen, onClose }) {
           )}
 
           {/* Navigation Buttons */}
-          <div className="flex gap-4 mt-8 pt-4 border-t">
+          <div className="flex gap-3 mt-4 pt-3 border-t">
             <button
               onClick={handlePrevious}
               disabled={currentStep === 1}
-              className={`px-6 py-2 rounded-lg font-medium transition ${
+              className={`px-4 py-1.5 rounded-lg font-medium text-sm transition ${
                 currentStep === 1
                   ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                   : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
@@ -771,7 +827,7 @@ export default function FacultyAdmissionModal({ isOpen, onClose }) {
               <button
                 onClick={handleNext}
                 disabled={currentStep === 4 && (!formData.resume || !formData.certifications)}
-                className={`px-6 py-2 rounded-lg font-medium transition ${
+                className={`px-4 py-1.5 rounded-lg font-medium text-sm transition ${
                   currentStep === 4 && (!formData.resume || !formData.certifications)
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     : 'bg-green-700 text-white hover:bg-green-800'
@@ -782,14 +838,14 @@ export default function FacultyAdmissionModal({ isOpen, onClose }) {
             ) : currentStep === 6 && !paymentDone ? (
               <button
                 onClick={handlePayment}
-                className="px-6 py-2 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition"
+                className="px-4 py-1.5 bg-green-500 text-white rounded-lg font-medium text-sm hover:bg-green-600 transition"
               >
-                💳 Proceed to Payment
+                💳 Payment
               </button>
             ) : currentStep === 6 && paymentDone ? (
               <button
                 onClick={handleNext}
-                className="px-6 py-2 bg-green-700 text-white rounded-lg font-medium hover:bg-green-800 transition"
+                className="px-4 py-1.5 bg-green-700 text-white rounded-lg font-medium text-sm hover:bg-green-800 transition"
               >
                 Next →
               </button>
@@ -797,7 +853,7 @@ export default function FacultyAdmissionModal({ isOpen, onClose }) {
               <button
                 onClick={handleSubmit}
                 disabled={isLoading}
-                className={`px-6 py-2 rounded-lg font-medium flex items-center gap-2 transition ${
+                className={`px-4 py-1.5 rounded-lg font-medium text-sm flex items-center gap-1.5 transition ${
                   isLoading
                     ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
                     : 'bg-green-500 text-white hover:bg-green-600'
