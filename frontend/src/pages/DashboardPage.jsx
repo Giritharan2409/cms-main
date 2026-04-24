@@ -94,26 +94,6 @@ export default function DashboardPage() {
                   })}
                 </KpiGrid>
               </div>
-
-              <div className="content-card">
-                <div className="section-header" style={{ marginBottom: 14 }}>
-                  <span className="section-title">Section Access</span>
-                </div>
-                <div className="role-access-grid">
-                  {menuGroups.map((group) => (
-                    <div key={group.title} className="role-access-card">
-                      <h4>{group.title}</h4>
-                      <div className="role-chip-wrap">
-                        {group.items.map((item) => (
-                          <span key={item} className="badge badge-gray">
-                            {item}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
     </Layout>
   );
 }

@@ -462,50 +462,6 @@ export default function FacultyDashboardPage() {
             })}
           </div>
         </div>
-
-        {/* Section Access */}
-        <div style={{
-          background: '#ffffff',
-          borderRadius: '12px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          padding: '24px'
-        }}>
-          <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1f2937', marginBottom: '20px' }}>
-            Section Access
-          </h3>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '20px'
-          }}>
-            {menuGroups.map((group) => (
-              <div key={group.title}>
-                <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '12px' }}>
-                  {group.title}
-                </h4>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {group.items.map((item) => (
-                    <span
-                      key={item}
-                      style={{
-                        display: 'inline-block',
-                        padding: '6px 12px',
-                        background: '#f3f4f6',
-                        color: '#6b7280',
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '6px',
-                        fontSize: '13px',
-                        fontWeight: '500'
-                      }}
-                    >
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* Modals */}
