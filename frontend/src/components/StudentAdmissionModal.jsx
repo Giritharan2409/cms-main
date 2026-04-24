@@ -105,8 +105,9 @@ export default function StudentAdmissionModal({ isOpen, onClose }) {
       aadhaarCard: new File(['demo'], 'aadhaar.jpg', { type: 'image/jpeg' }),
       marksheet: new File(['demo'], 'marksheet.pdf', { type: 'application/pdf' }),
       transferCertificate: new File(['demo'], 'transfer.pdf', { type: 'application/pdf' }),
-      paymentMethod: '',
+      paymentMethod: 'UPI',
     });
+    alert('✓ Demo data filled! All fields populated with sample data.');
   };
 
   const handleInputChange = (e) => {
@@ -177,56 +178,79 @@ export default function StudentAdmissionModal({ isOpen, onClose }) {
   };
 
   const handleSubmit = async () => {
-    const studentData = {
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      dateOfBirth: formData.dateOfBirth,
-      gender: formData.gender,
-      previousSchool: formData.previousSchool,
-      board: formData.board,
-      yearOfPassing: formData.yearOfPassing,
-      marksPercentage: formData.marksPercentage,
-      courseCategory: formData.courseCategory,
-      course: formData.course,
-      quota: formData.quota,
-      accommodation: formData.accommodation,
-      roomType: formData.roomType,
-      paymentStatus: 'Paid',
-    };
-
     try {
-      console.log('Submitting student data:', studentData);
-      // Save to backend MongoDB
+      // Validate required fields
+      if (!formData.name || !formData.email || !formData.phone || !formData.gender || !formData.dateOfBirth) {
+        alert('❌ Please fill all required personal information fields');
+        return;
+      }
+      if (!formData.courseCategory || !formData.course) {
+        alert('❌ Please fill course information');
+        return;
+      }
+      if (!formData.quota || !formData.accommodation) {
+        alert('❌ Please select quota and accommodation type');
+        return;
+      }
+
+      const studentData = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        dateOfBirth: formData.dateOfBirth,
+        gender: formData.gender,
+        previousSchool: formData.previousSchool,
+        board: formData.board,
+        yearOfPassing: formData.yearOfPassing,
+        marksPercentage: formData.marksPercentage,
+        courseCategory: formData.courseCategory,
+        course: formData.course,
+        quota: formData.quota,
+        accommodation: formData.accommodation,
+        roomType: formData.roomType,
+        paymentMethod: formData.paymentMethod,
+        paymentStatus: 'Paid',
+        status: 'Pending',
+      };
+
+      console.log('📤 Submitting student data:', studentData);
+      
+      // Try to fetch from the backend with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
       const response = await fetch(`${API_BASE}/admissions/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(studentData),
+        signal: controller.signal,
       });
 
-      console.log('Response status:', response.status);
+      clearTimeout(timeoutId);
+      console.log('📥 Response status:', response.status);
       
       if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: Failed to save admission`;
         try {
           const errorData = await response.json();
-          throw new Error(errorData.detail || `HTTP ${response.status}: Failed to save admission`);
-        } catch (parseError) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText || 'Failed to save admission'}`);
+          errorMessage = errorData.detail || errorMessage;
+        } catch (e) {
+          // Error response is not JSON, use status message
         }
+        throw new Error(errorMessage);
       }
 
       let result;
       try {
         result = await response.json();
+        console.log('✅ Admission saved successfully:', result);
       } catch (parseError) {
-        console.error('Failed to parse response:', parseError);
-        throw new Error('Invalid response from server');
+        console.warn('⚠️ Response is not JSON, but submission was successful');
+        result = { id: 'STU-' + Date.now() };
       }
       
-      console.log('Admission saved to MongoDB:', result);
-
       // Also add to local state for immediate UI update
       addStudentApp(studentData);
 
@@ -254,10 +278,20 @@ export default function StudentAdmissionModal({ isOpen, onClose }) {
       });
       setPaymentDone(false);
       setCurrentStep(1);
+      
+      alert(`✅ Student admission submitted successfully!\n\nApplication ID: ${result.id || result.admission_id || 'Processing'}\n\nYour application is now under review.`);
       onClose();
     } catch (error) {
-      console.error('Error saving admission:', error);
-      alert(`Error: ${error.message}`);
+      if (error.name === 'AbortError') {
+        console.error('❌ Request timeout:', error);
+        alert('❌ Connection timeout. Please check if backend server is running on port 5000.\n\nTroubleshoot:\n1. Start backend: python -m uvicorn main:app --host 0.0.0.0 --port 5000\n2. Check CORS policy\n3. Verify API_BASE URL in frontend');
+      } else if (error instanceof TypeError) {
+        console.error('❌ Network error:', error);
+        alert('❌ Network error - Failed to reach backend server.\n\nPlease ensure:\n1. Backend is running (port 5000)\n2. No network firewall blocking\n3. API_BASE is correctly configured');
+      } else {
+        console.error('❌ Error saving admission:', error);
+        alert(`❌ Error: ${error.message}`);
+      }
     }
   };
 
@@ -267,33 +301,33 @@ export default function StudentAdmissionModal({ isOpen, onClose }) {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg max-w-3xl w-full mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-6 relative">
-          <h1 className="text-2xl font-bold">Student Admission Form</h1>
-          <p className="text-green-100">Complete all steps to submit your application</p>
+        <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-4 relative">
+          <h1 className="text-lg font-semibold">Student Admission Form</h1>
+          <p className="text-green-100 text-xs mt-0.5">Complete all steps to submit your application</p>
           <button
             onClick={handleAutoFillDemo}
-            className="absolute top-6 right-16 bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition text-sm"
+            className="absolute top-5 right-16 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-1.5 px-3 rounded-lg transition text-xs"
           >
-            🔄 Auto Fill Demo
+            🔄 Auto Fill
           </button>
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-white hover:bg-green-400 p-2 rounded-full"
+            className="absolute top-3 right-4 text-white hover:bg-green-400 p-1.5 rounded-full"
           >
             ✕
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-8">
+        <div className="p-6">
           {/* Progress Steps */}
-          <div className="mb-8">
-            <div className="text-sm text-gray-600 mb-6">Step {currentStep} of 8</div>
-            <div className="flex justify-between items-end gap-2">
+          <div className="mb-6">
+            <div className="text-xs text-gray-600 mb-3 font-medium">Step {currentStep} of 8</div>
+            <div className="flex justify-between items-end gap-1.5">
               {steps.map((step, idx) => (
                 <div key={step.number} className="flex flex-col items-center flex-1">
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition mb-2 ${
+                    className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-xs transition mb-1.5 ${
                       step.number < currentStep
                         ? 'bg-green-500 text-white'
                         : step.number === currentStep
@@ -312,11 +346,11 @@ export default function StudentAdmissionModal({ isOpen, onClose }) {
           {/* Form Content */}
           <div className="min-h-[300px]">
             {currentStep === 1 && (
-              <div className="space-y-4">
-                <h2 className="text-xl font-bold text-gray-800 mb-4">Personal Information</h2>
-                <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <h2 className="text-sm font-semibold text-gray-800 mb-3">Personal Information</h2>
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
                       Full Name *
                     </label>
                     <input
@@ -325,18 +359,18 @@ export default function StudentAdmissionModal({ isOpen, onClose }) {
                       value={formData.name}
                       onChange={handleInputChange}
                       placeholder="Enter full name"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-600-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
                       Gender
                     </label>
                     <select
                       name="gender"
                       value={formData.gender}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-600-500"
                     >
                       <option value="">Select</option>
                       <option value="Male">Male</option>
@@ -346,7 +380,7 @@ export default function StudentAdmissionModal({ isOpen, onClose }) {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Date of Birth
                   </label>
                   <input
@@ -847,7 +881,7 @@ export default function StudentAdmissionModal({ isOpen, onClose }) {
                   </button>
                   <button
                     onClick={handleCompletePayment}
-                    className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition"
+                    className="flex-1 px-3 py-1.5 bg-green-500 text-white rounded-lg font-medium text-sm hover:bg-green-600 transition"
                   >
                     Pay Now
                   </button>
@@ -857,11 +891,11 @@ export default function StudentAdmissionModal({ isOpen, onClose }) {
           )}
 
           {/* Navigation Buttons */}
-          <div className="flex gap-4 mt-8 pt-4 border-t">
+          <div className="flex gap-3 mt-4 pt-3 border-t">
             <button
               onClick={handlePrevious}
               disabled={currentStep === 1}
-              className={`px-6 py-2 rounded-lg font-medium transition ${
+              className={`px-4 py-1.5 rounded-lg font-medium text-sm transition ${
                 currentStep === 1
                   ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                   : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
@@ -876,7 +910,7 @@ export default function StudentAdmissionModal({ isOpen, onClose }) {
               <button
                 onClick={handleNext}
                 disabled={currentStep === 6 && (!formData.passportPhoto || !formData.aadhaarCard || !formData.marksheet)}
-                className={`px-6 py-2 rounded-lg font-medium transition ${
+                className={`px-4 py-1.5 rounded-lg font-medium text-sm transition ${
                   currentStep === 6 && (!formData.passportPhoto || !formData.aadhaarCard || !formData.marksheet)
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     : 'bg-green-500 text-white hover:bg-green-600'
@@ -887,23 +921,23 @@ export default function StudentAdmissionModal({ isOpen, onClose }) {
             ) : currentStep === 7 && !paymentDone ? (
               <button
                 onClick={handlePayment}
-                className="px-6 py-2 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition"
+                className="px-4 py-1.5 bg-green-500 text-white rounded-lg font-medium text-sm hover:bg-green-600 transition"
               >
-                💳 Proceed to Payment
+                💳 Payment
               </button>
             ) : currentStep === 7 && paymentDone ? (
               <button
                 onClick={handleNext}
-                className="px-6 py-2 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition"
+                className="px-4 py-1.5 bg-green-500 text-white rounded-lg font-medium text-sm hover:bg-green-600 transition"
               >
                 Next →
               </button>
             ) : (
               <button
                 onClick={handleSubmit}
-                className="px-6 py-2 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition flex items-center gap-2"
+                className="px-4 py-1.5 bg-green-500 text-white rounded-lg font-medium text-sm hover:bg-green-600 transition flex items-center gap-1.5"
               >
-                ✓ Submit Application
+                ✓ Submit
               </button>
             )}
           </div>

@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useAdmission } from '../context/AdmissionContext';
-import AddMemberModal from '../components/AddMemberModal';
 import AdmissionDetailsModal from '../components/AdmissionDetailsModal';
 import { PageContainer, StatsSection, StatusBadge, ActionButtons } from '../components/common';
 
 export default function AdmissionPage() {
+  const navigate = useNavigate();
   const {
     studentApps,
     facultyApps,
@@ -17,7 +18,6 @@ export default function AdmissionPage() {
 
   const [activeTab, setActiveTab] = useState('students');
   const [searchName, setSearchName] = useState('');
-  const [showAddModal, setShowAddModal] = useState(false);
   const [selectedApp, setSelectedApp] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
@@ -138,7 +138,7 @@ export default function AdmissionPage() {
                 className="flex-1 md:flex-none px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
               />
               <button
-                onClick={() => setShowAddModal(true)}
+                onClick={() => navigate('/add-member')}
                 className="px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-800 flex items-center gap-2"
               >
                 <span className="material-symbols-outlined">add</span>
@@ -206,14 +206,6 @@ export default function AdmissionPage() {
       </PageContainer>
 
       {/* Modals */}
-      {showAddModal && (
-        <AddMemberModal
-          isOpen={showAddModal}
-          onClose={() => setShowAddModal(false)}
-          type={activeTab === 'students' ? 'student' : 'faculty'}
-        />
-      )}
-
       {showDetailsModal && selectedApp && (
         <AdmissionDetailsModal
           isOpen={showDetailsModal}
