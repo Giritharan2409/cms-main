@@ -15,6 +15,7 @@ export default function AdminFeesPage() {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [deleteReason, setDeleteReason] = useState('');
   const [studentIdMapping, setStudentIdMapping] = useState('');
+  const [expandedFeeId, setExpandedFeeId] = useState(null);
   const [assignFormData, setAssignFormData] = useState({
     semester: '',
     course: '',
@@ -213,143 +214,212 @@ export default function AdminFeesPage() {
           { value: `₹${stats.totalRevenue.toLocaleString()}`, label: 'Total Revenue', icon: 'trending_up' },
         ]} />
 
-        {/* All Fee Assignments Cards */}
+        {/* All Fee Assignments Table */}
         <div>
           <div className="mb-6">
             <h2 className="text-lg font-bold text-gray-800">All Fee Assignments</h2>
           </div>
 
-          {feeAssignments.length === 0 ? (
-            <div className="bg-white rounded-lg shadow p-12 text-center text-gray-500">
-              <span className="material-symbols-outlined text-4xl block mb-4 text-gray-300">receipt_long</span>
-              <p className="font-medium">No fee assignments yet</p>
-              <p className="text-sm">Start by assigning fees to approved students</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {feeAssignments.map((assignment) => (
-                <div
-                  key={assignment.id}
-                  className="bg-green-50 border-2 border-green-100 rounded-lg p-4 shadow hover:shadow-md transition"
-                >
-                  {/* Badge */}
-                  <div className="mb-2">
-                    <span className="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                      Fee Assigned
-                    </span>
-                  </div>
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
+                  <th className="px-6 py-4">Student Info</th>
+                  <th className="px-6 py-4">Student ID</th>
+                  <th className="px-6 py-4">Course</th>
+                  <th className="px-6 py-4">Semester</th>
+                  <th className="px-6 py-4">Amount</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4">Assigned Date</th>
+                  <th className="px-6 py-4 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {feeAssignments.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-10 py-24 text-center text-slate-400 bg-slate-50/30">
+                      <div className="flex flex-col items-center">
+                        <span className="material-symbols-outlined text-6xl mb-4 opacity-10 text-slate-900">
+                          receipt_long
+                        </span>
+                        <p className="text-base font-bold text-slate-500">No fee assignments yet</p>
+                        <p className="text-xs font-medium text-slate-400 mt-1">Start by assigning fees to approved students</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  feeAssignments.map((assignment) => (
+                    <React.Fragment key={assignment.id}>
+                      <tr className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div>
+                            <p className="font-semibold text-slate-900 text-sm">{assignment.studentName}</p>
+                            <p className="text-xs text-slate-500">{assignment.applicationId}</p>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm font-medium text-slate-700">{assignment.studentId}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm text-slate-600">{assignment.course}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm text-slate-600">{assignment.semester}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm font-bold text-orange-600">₹{Number(assignment.totalFee).toLocaleString()}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold inline-block ${
+                            assignment.paymentStatus?.toLowerCase() === 'paid'
+                              ? 'bg-green-100 text-green-800'
+                              : assignment.paymentStatus?.toLowerCase() === 'processing'
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-orange-100 text-orange-800'
+                          }`}>
+                            {assignment.paymentStatus ? assignment.paymentStatus.charAt(0).toUpperCase() + assignment.paymentStatus.slice(1) : 'Pending'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm text-slate-600">{assignment.assignedDate}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => setExpandedFeeId(expandedFeeId === assignment.id ? null : assignment.id)}
+                              className="p-2 hover:bg-slate-100 rounded-lg transition text-slate-600 hover:text-slate-900"
+                              title="View Details"
+                            >
+                              <span className="material-symbols-outlined text-lg">
+                                {expandedFeeId === assignment.id ? 'expand_less' : 'expand_more'}
+                              </span>
+                            </button>
+                            <button
+                              onClick={() => handleGenerateInvoice(assignment)}
+                              className="p-2 hover:bg-orange-100 rounded-lg transition text-orange-600 hover:text-orange-700"
+                              title="Generate Invoice"
+                            >
+                              <span className="material-symbols-outlined text-lg">receipt</span>
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(assignment)}
+                              className="p-2 hover:bg-red-100 rounded-lg transition text-red-600 hover:text-red-700"
+                              title="Delete"
+                            >
+                              <span className="material-symbols-outlined text-lg">delete</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
 
-                  {/* Student Name */}
-                  <h3 className="text-base font-bold text-gray-900 mb-2">
-                    {assignment.studentName}
-                  </h3>
-
-                  {/* Application ID and Basic Info */}
-                  <div className="text-xs text-gray-600 mb-2 space-y-1">
-                    <p><span className="font-semibold">Application ID:</span> {assignment.applicationId}</p>
-                    <p><span className="font-semibold">Semester:</span> {assignment.semester}</p>
-                    <p><span className="font-semibold">Course:</span> {assignment.course}</p>
-                  </div>
-
-                  {/* Total Fee (Prominent) */}
-                  <div className="bg-white rounded-lg p-2 mb-2 border border-green-200">
-                    <p className="text-2xl font-bold text-orange-600 mb-1">
-                      ₹{assignment.totalFee.toLocaleString()}
-                    </p>
-                    <p className="text-xs text-gray-600">Total Fee</p>
-                  </div>
-
-                  {/* Assigned Date and Status */}
-                  <div className="text-xs text-gray-600 mb-2 space-y-1">
-                    <p><span className="font-semibold">Assigned Date:</span> {assignment.assignedDate}</p>
-                    <p>
-                      <span className="font-semibold">Payment Status:</span>
-                      <span className={`ml-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
-                        assignment.paymentStatus?.toLowerCase() === 'paid'
-                          ? 'bg-green-100 text-green-800'
-                          : assignment.paymentStatus?.toLowerCase() === 'processing'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-orange-100 text-orange-800'
-                      }`}>
-                        {assignment.paymentStatus ? assignment.paymentStatus.charAt(0).toUpperCase() + assignment.paymentStatus.slice(1) : 'Pending'}
-                      </span>
-                    </p>
-                  </div>
-
-                  {/* Fee Breakdown */}
-                  <div className="bg-white rounded-lg p-2 mb-3">
-                    <p className="text-xs font-bold text-gray-800 mb-1">Fee Breakdown:</p>
-                    <ul className="text-xs text-gray-700 space-y-0.5">
-                      <li>• Semester Fee: <span className="float-right font-semibold">₹{assignment.semesterFee.toLocaleString()}</span></li>
-                      <li>• Book Fee: <span className="float-right font-semibold">₹{assignment.bookFee.toLocaleString()}</span></li>
-                      <li>• Exam Fee: <span className="float-right font-semibold">₹{assignment.examFee.toLocaleString()}</span></li>
-                      {assignment.hostelFee > 0 && (
-                        <li>• Hostel Fee: <span className="float-right font-semibold">₹{assignment.hostelFee.toLocaleString()}</span></li>
+                      {/* Expandable Row - Fee Breakdown */}
+                      {expandedFeeId === assignment.id && (
+                        <tr className="bg-slate-50 hover:bg-slate-50">
+                          <td colSpan={8} className="px-6 py-6">
+                            <div className="space-y-4">
+                              <h4 className="font-bold text-slate-900">Fee Breakdown</h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-3">
+                                  <div className="flex justify-between text-sm">
+                                    <span className="text-slate-600">Semester Fee:</span>
+                                    <span className="font-semibold text-slate-900">₹{Number(assignment.semesterFee).toLocaleString()}</span>
+                                  </div>
+                                  <div className="flex justify-between text-sm">
+                                    <span className="text-slate-600">Book Fee:</span>
+                                    <span className="font-semibold text-slate-900">₹{Number(assignment.bookFee).toLocaleString()}</span>
+                                  </div>
+                                  <div className="flex justify-between text-sm">
+                                    <span className="text-slate-600">Exam Fee:</span>
+                                    <span className="font-semibold text-slate-900">₹{Number(assignment.examFee).toLocaleString()}</span>
+                                  </div>
+                                  {Number(assignment.hostelFee) > 0 && (
+                                    <div className="flex justify-between text-sm">
+                                      <span className="text-slate-600">Hostel Fee:</span>
+                                      <span className="font-semibold text-slate-900">₹{Number(assignment.hostelFee).toLocaleString()}</span>
+                                    </div>
+                                  )}
+                                  {Number(assignment.miscFee) > 0 && (
+                                    <div className="flex justify-between text-sm">
+                                      <span className="text-slate-600">Miscellaneous Fee:</span>
+                                      <span className="font-semibold text-slate-900">₹{Number(assignment.miscFee).toLocaleString()}</span>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="bg-white rounded-lg border border-slate-200 p-4">
+                                  <div className="flex justify-between items-center">
+                                    <span className="font-bold text-slate-900">Total Amount</span>
+                                    <span className="text-lg font-bold text-orange-600">₹{Number(assignment.totalFee).toLocaleString()}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
                       )}
-                      {assignment.miscFee > 0 && (
-                        <li>• Misc Fee: <span className="float-right font-semibold">₹{assignment.miscFee.toLocaleString()}</span></li>
-                      )}
-                    </ul>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleGenerateInvoice(assignment)}
-                      className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-1.5 text-sm rounded-lg transition flex items-center justify-center gap-1"
-                      title="Generate Invoice"
-                    >
-                      <span className="material-symbols-outlined text-sm">receipt</span>
-                      Generate Invoice
-                    </button>
-                    <button
-                      onClick={() => handleDeleteClick(assignment)}
-                      className="p-1.5 hover:bg-red-100 text-red-600 rounded transition border border-red-200"
-                      title="Delete"
-                    >
-                      <span className="material-symbols-outlined text-base">delete</span>
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                    </React.Fragment>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Students Awaiting Fee Assignment */}
         {studentsWithoutFees.length > 0 && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-bold text-gray-800 mb-6">
-              Students Awaiting Fee Assignment ({studentsWithoutFees.length})
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {studentsWithoutFees.map((student) => (
-                <div
-                  key={student.id}
-                  className="bg-green-50 border border-green-200 rounded-lg p-6 hover:shadow-lg transition"
-                >
-                  <div className="mb-4">
-                    <span className="bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full">
-                      Approved
-                    </span>
-                  </div>
-                  <h3 className="font-bold text-gray-800 text-base mb-3">
-                    {student.name || student.fullName}
-                  </h3>
-                  <div className="space-y-1 text-sm text-gray-600 mb-6">
-                    <p><span className="font-semibold">ID:</span> {student.id}</p>
-                    <p><span className="font-semibold">Course:</span> {student.course}</p>
-                    <p><span className="font-semibold">Email:</span> {student.email}</p>
-                  </div>
-                  <button
-                    onClick={() => handleAssignClick(student)}
-                    className="w-full bg-green-700 text-white py-2 rounded-lg hover:bg-green-800 transition font-medium"
-                  >
-                    Assign Fee
-                  </button>
-                </div>
-              ))}
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+            <div className="px-6 py-4 bg-slate-50 border-b border-slate-200">
+              <h2 className="text-lg font-bold text-slate-900">
+                Students Awaiting Fee Assignment ({studentsWithoutFees.length})
+              </h2>
             </div>
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
+                  <th className="px-6 py-4">Student Info</th>
+                  <th className="px-6 py-4">Application ID</th>
+                  <th className="px-6 py-4">Course</th>
+                  <th className="px-6 py-4">Email</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4 text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {studentsWithoutFees.map((student) => (
+                  <tr key={student.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="font-semibold text-slate-900 text-sm">{student.name || student.fullName}</p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm font-medium text-slate-700">{student.id}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-slate-600">{student.course}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-slate-600">{student.email}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 inline-block">
+                        Approved
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center">
+                        <button
+                          onClick={() => handleAssignClick(student)}
+                          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition flex items-center gap-2"
+                        >
+                          <span className="material-symbols-outlined text-lg">add</span>
+                          Assign Fee
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </PageContainer>

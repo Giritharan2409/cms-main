@@ -107,7 +107,6 @@ export default function StudentsPage() {
           <SearchFilter
             searchQuery={searchQuery}
             onSearchChange={handleSearch}
-            onAddClick={() => { setEditingStudent(null); setIsModalOpen(true); }}
           />
         </div>
 

@@ -352,23 +352,11 @@ export default function ExamsPage({ noLayout = false }) {
       </div>
       
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        {[
-          { icon: 'event_upcoming', label: 'Upcoming Exams',  value: stats.upcoming, color: 'text-[#276221] bg-[#276221]/10' },
-          { icon: 'check_circle',   label: 'Completed',       value: stats.completed, color: 'text-emerald-600 bg-emerald-100' },
-          { icon: 'pending',        label: 'Results Pending', value: stats.pending, color: 'text-orange-600 bg-orange-100' },
-        ].map((s) => (
-          <div key={s.label} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-            <div className={`p-3 rounded-xl ${s.color}`}>
-              <span className="material-symbols-outlined">{s.icon}</span>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500 font-medium">{s.label}</p>
-              <p className="text-2xl font-bold text-slate-900">{s.value}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+      <KpiGrid className="lg:grid-cols-3">
+        <KpiCard icon="event_upcoming" label="Upcoming Exams" value={stats.upcoming} colorScheme="blue" />
+        <KpiCard icon="check_circle" label="Completed" value={stats.completed} colorScheme="emerald" />
+        <KpiCard icon="pending" label="Results Pending" value={stats.pending} colorScheme="orange" />
+      </KpiGrid>
 
       {/* Exams Table */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">

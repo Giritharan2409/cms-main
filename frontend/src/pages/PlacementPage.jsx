@@ -209,30 +209,22 @@ export default function PlacementPage({ noLayout = false }) {
   const inner = (
     <>
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <KpiGrid className="lg:grid-cols-3">
         {(isAdmin
           ? [
-              { icon: 'emoji_events', label: 'Students Placed',   value: filteredEntries.filter(e => e.status === 'Selected').length,     color: 'text-[#276221] bg-[#276221]/10' },
-              { icon: 'business',    label: 'Companies Visited',  value: new Set(filteredEntries.map(e => e.company)).size,               color: 'text-purple-600 bg-purple-100' },
-              { icon: 'attach_money',label: 'Avg. Package',       value: avgPackage,                                              color: 'text-emerald-600 bg-emerald-100' },
+              { icon: 'emoji_events', label: 'Students Placed',   value: filteredEntries.filter(e => e.status === 'Selected').length, colorScheme: 'blue' },
+              { icon: 'business',    label: 'Companies Visited',  value: new Set(filteredEntries.map(e => e.company)).size, colorScheme: 'purple' },
+              { icon: 'attach_money',label: 'Avg. Package',       value: avgPackage, colorScheme: 'emerald' },
             ]
           : [
-              { icon: 'emoji_events', label: 'Placements',        value: filteredEntries.length,                                   color: 'text-[#276221] bg-[#276221]/10' },
-              { icon: 'assignment_turned_in', label: 'Selected',   value: filteredEntries.filter(e => e.status === 'Selected').length,    color: 'text-emerald-600 bg-emerald-100' },
-              { icon: 'schedule',     label: 'In Process',        value: filteredEntries.filter(e => e.status === 'Process').length,     color: 'text-orange-600 bg-orange-100' },
+              { icon: 'emoji_events', label: 'Placements',        value: filteredEntries.length, colorScheme: 'blue' },
+              { icon: 'assignment_turned_in', label: 'Selected',   value: filteredEntries.filter(e => e.status === 'Selected').length, colorScheme: 'emerald' },
+              { icon: 'schedule',     label: 'In Process',        value: filteredEntries.filter(e => e.status === 'Process').length, colorScheme: 'orange' },
             ])
         .map((s, idx) => (
-          <div key={`${s.label}-${idx}`} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-            <div className={`p-3 rounded-xl ${s.color}`}>
-              <span className="material-symbols-outlined">{s.icon}</span>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500 font-medium">{s.label}</p>
-              <p className="text-2xl font-bold text-slate-900">{s.value}</p>
-            </div>
-          </div>
+          <KpiCard key={`${s.label}-${idx}`} icon={s.icon} label={s.label} value={s.value} colorScheme={s.colorScheme} />
         ))}
-      </div>
+      </KpiGrid>
 
       {/* Search & Filter */}
       <div className="flex flex-wrap items-center justify-end gap-3 mb-6">
