@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import Layout from '../components/Layout'
+import KpiCard from '../components/KpiCard'
+import KpiGrid from '../components/KpiGrid'
 import { getUserSession } from '../auth/sessionController'
 import {
   fetchFacilities,
@@ -184,38 +186,11 @@ export default function FacilityPage({ noLayout = false }) {
           </div>
         )}
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        {[
-          {
-            icon: 'meeting_room',
-            label: 'Available Today',
-            value: visibleFacilities.filter((f) => displayStatusByRoom[f.name] === 'Available').length,
-            color: 'text-emerald-600 bg-emerald-100',
-          },
-          {
-            icon: 'groups',
-            label: 'Booked Today',
-            value: visibleFacilities.filter((f) => displayStatusByRoom[f.name] === 'In Use').length,
-            color: 'text-green-600 bg-green-100',
-          },
-          {
-            icon: 'build',
-            label: 'Maintenance',
-            value: visibleFacilities.filter((f) => displayStatusByRoom[f.name] === 'Maintenance').length,
-            color: 'text-red-600 bg-red-100',
-          },
-        ].map((s) => (
-          <div key={s.label} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-            <div className={`p-3 rounded-xl ${s.color}`}>
-              <span className="material-symbols-outlined">{s.icon}</span>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500 font-medium">{s.label}</p>
-              <p className="text-2xl font-bold text-slate-900">{s.value}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+      <KpiGrid className="lg:grid-cols-3">
+        <KpiCard icon="meeting_room" label="Available Today" value={visibleFacilities.filter((f) => displayStatusByRoom[f.name] === 'Available').length} colorScheme="emerald" />
+        <KpiCard icon="groups" label="Booked Today" value={visibleFacilities.filter((f) => displayStatusByRoom[f.name] === 'In Use').length} colorScheme="green" />
+        <KpiCard icon="build" label="Maintenance" value={visibleFacilities.filter((f) => displayStatusByRoom[f.name] === 'Maintenance').length} colorScheme="red" />
+      </KpiGrid>
 
       {/* Search & Filter — right-aligned like attendance page */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">

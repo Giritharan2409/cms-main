@@ -1260,102 +1260,30 @@ export default function AttendancePage({ noLayout = false }) {
 
           if (showStudentDailyView) {
             return (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-green-50 rounded-xl border border-green-200 p-5 shadow-sm flex items-center gap-4">
-                  <div className="p-3 rounded-xl text-green-700 bg-green-100">
-                    <span className="material-symbols-outlined">check_circle</span>
-                  </div>
-                  <div>
-                    <p className="text-xs text-green-700 font-medium">Present (Selected Date)</p>
-                    <p className="text-2xl font-bold text-green-900">{dailySummaryCounts.present}</p>
-                  </div>
-                </div>
-                <div className="bg-red-50 rounded-xl border border-red-200 p-5 shadow-sm flex items-center gap-4">
-                  <div className="p-3 rounded-xl text-red-700 bg-red-100">
-                    <span className="material-symbols-outlined">cancel</span>
-                  </div>
-                  <div>
-                    <p className="text-xs text-red-700 font-medium">Absent (Selected Date)</p>
-                    <p className="text-2xl font-bold text-red-900">{dailySummaryCounts.absent}</p>
-                  </div>
-                </div>
-                <div className="bg-green-50 rounded-xl border border-green-200 p-5 shadow-sm flex items-center gap-4">
-                  <div className="p-3 rounded-xl text-green-700 bg-green-100">
-                    <span className="material-symbols-outlined">event_available</span>
-                  </div>
-                  <div>
-                    <p className="text-xs text-green-700 font-medium">OD (Selected Date)</p>
-                    <p className="text-2xl font-bold text-green-900">{dailySummaryCounts.od}</p>
-                  </div>
-                </div>
-              </div>
+              <KpiGrid className="lg:grid-cols-3">
+                <KpiCard icon="check_circle" label="Present (Selected Date)" value={dailySummaryCounts.present} colorScheme="green" />
+                <KpiCard icon="cancel" label="Absent (Selected Date)" value={dailySummaryCounts.absent} colorScheme="red" />
+                <KpiCard icon="event_available" label="OD (Selected Date)" value={dailySummaryCounts.od} colorScheme="green" />
+              </KpiGrid>
             )
           }
 
           if (showStudentOdApplyView) {
             return (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-green-50 rounded-xl border border-green-200 p-5 shadow-sm flex items-center gap-4">
-                  <div className="p-3 rounded-xl text-green-700 bg-green-100">
-                    <span className="material-symbols-outlined">assignment</span>
-                  </div>
-                  <div>
-                    <p className="text-xs text-green-700 font-medium">OD Applied</p>
-                    <p className="text-2xl font-bold text-green-900">{odSummaryCounts.applied}</p>
-                  </div>
-                </div>
-                <div className="bg-green-50 rounded-xl border border-green-200 p-5 shadow-sm flex items-center gap-4">
-                  <div className="p-3 rounded-xl text-green-700 bg-green-100">
-                    <span className="material-symbols-outlined">verified</span>
-                  </div>
-                  <div>
-                    <p className="text-xs text-green-700 font-medium">OD Approved</p>
-                    <p className="text-2xl font-bold text-green-900">{odSummaryCounts.approved}</p>
-                  </div>
-                </div>
-                <div className="bg-amber-50 rounded-xl border border-amber-200 p-5 shadow-sm flex items-center gap-4">
-                  <div className="p-3 rounded-xl text-amber-700 bg-amber-100">
-                    <span className="material-symbols-outlined">hourglass_top</span>
-                  </div>
-                  <div>
-                    <p className="text-xs text-amber-700 font-medium">OD Pending</p>
-                    <p className="text-2xl font-bold text-amber-900">{odSummaryCounts.pending}</p>
-                  </div>
-                </div>
-              </div>
+              <KpiGrid className="lg:grid-cols-3">
+                <KpiCard icon="assignment" label="OD Applied" value={odSummaryCounts.applied} colorScheme="green" />
+                <KpiCard icon="verified" label="OD Approved" value={odSummaryCounts.approved} colorScheme="green" />
+                <KpiCard icon="hourglass_top" label="OD Pending" value={odSummaryCounts.pending} colorScheme="amber" />
+              </KpiGrid>
             )
           }
 
           return (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="bg-green-50 rounded-xl border border-green-200 p-5 shadow-sm flex items-center gap-4">
-                <div className="p-3 rounded-xl text-green-700 bg-green-100">
-                  <span className="material-symbols-outlined">calendar_today</span>
-                </div>
-                <div>
-                  <p className="text-xs text-green-700 font-medium">Total Classes</p>
-                  <p className="text-2xl font-bold text-green-900">{myEffectiveAttendance.total}</p>
-                </div>
-              </div>
-              <div className={`rounded-xl border p-5 shadow-sm flex items-center gap-4 ${attendanceTone.card}`}>
-                <div className={`p-3 rounded-xl ${attendanceTone.icon}`}>
-                  <span className="material-symbols-outlined">percent</span>
-                </div>
-                <div>
-                  <p className={`text-xs font-medium ${attendanceTone.label}`}>Attendance %</p>
-                  <p className={`text-2xl font-bold ${attendanceTone.value}`}>{pct}%</p>
-                </div>
-              </div>
-              <div className={`rounded-xl border p-5 shadow-sm flex items-center gap-4 ${canMissTone.card}`}>
-                <div className={`p-3 rounded-xl ${canMissTone.icon}`}>
-                  <span className="material-symbols-outlined">event_available</span>
-                </div>
-                <div>
-                  <p className={`text-xs font-medium ${canMissTone.label}`}>Classes Can Miss</p>
-                  <p className={`text-2xl font-bold ${canMissTone.value}`}>{canMiss}</p>
-                </div>
-              </div>
-            </div>
+            <KpiGrid className="lg:grid-cols-3">
+              <KpiCard icon="calendar_today" label="Total Classes" value={myEffectiveAttendance.total} colorScheme="blue" />
+              <KpiCard icon="percent" label="Attendance %" value={`${pct}%`} colorScheme="green" />
+              <KpiCard icon="event_available" label="Classes Can Miss" value={canMiss} colorScheme="orange" />
+            </KpiGrid>
           )
         }
         // Faculty / Admin view
@@ -1365,37 +1293,12 @@ export default function AttendancePage({ noLayout = false }) {
         const below75     = summaryData.filter(s => calcPct(s.present, s.total) < 75).length
         const totalPeople = summaryData.length
         const isStudentSummary = summaryLabel === 'Students'
-        const averageAttendanceTone = getAttendanceCardTone(avgPct)
         return (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-              <div className="p-3 rounded-xl text-[#276221] bg-[#276221]/10">
-                <span className="material-symbols-outlined">{isStudentSummary ? 'school' : 'badge'}</span>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 font-medium">{isStudentSummary ? 'Total Students' : 'Total Staff'}</p>
-                <p className="text-2xl font-bold text-slate-900">{totalPeople}</p>
-              </div>
-            </div>
-            <div className={`rounded-xl border p-5 shadow-sm flex items-center gap-4 ${averageAttendanceTone.card}`}>
-              <div className={`p-3 rounded-xl ${averageAttendanceTone.icon}`}>
-                <span className="material-symbols-outlined">bar_chart</span>
-              </div>
-              <div>
-                <p className={`text-xs font-medium ${averageAttendanceTone.label}`}>Average Attendance %</p>
-                <p className={`text-2xl font-bold ${averageAttendanceTone.value}`}>{avgPct}%</p>
-              </div>
-            </div>
-            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-              <div className="p-3 rounded-xl text-red-500 bg-red-100">
-                <span className="material-symbols-outlined">warning</span>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 font-medium">{summaryLabel} Below 75%</p>
-                <p className="text-2xl font-bold text-slate-900">{below75}</p>
-              </div>
-            </div>
-          </div>
+          <KpiGrid className="lg:grid-cols-3">
+            <KpiCard icon={isStudentSummary ? 'school' : 'badge'} label={isStudentSummary ? 'Total Students' : 'Total Staff'} value={totalPeople} colorScheme="blue" />
+            <KpiCard icon="bar_chart" label="Average Attendance %" value={`${avgPct}%`} colorScheme="green" />
+            <KpiCard icon="warning" label={`${summaryLabel} Below 75%`} value={below75} colorScheme="red" />
+          </KpiGrid>
         )
       })()}
 

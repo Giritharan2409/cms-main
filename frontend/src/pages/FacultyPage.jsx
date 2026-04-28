@@ -114,7 +114,6 @@ export default function FacultyPage() {
             searchQuery={searchQuery}
             onSearchChange={handleSearch}
             placeholder="Search faculty by name, ID, or email..."
-            onAddClick={() => setIsModalOpen(true)}
           />
         </div>
 
