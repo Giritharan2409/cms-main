@@ -78,17 +78,138 @@ DIST_DIR = BASE_DIR / "frontend" / "dist"
 DIST_ASSETS_DIR = DIST_DIR / "assets"
 DIST_INDEX_FILE = DIST_DIR / "index.html"
 
+# Only mount static assets if dist folder exists (production build)
 if DIST_ASSETS_DIR.exists():
     app.mount("/assets", StaticFiles(directory=str(DIST_ASSETS_DIR)), name="assets")
+
+# Helper function to create dev mode guidance HTML
+def get_dev_mode_html():
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>MIT Connect - Development Mode</title>
+        <style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                margin: 0;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            }
+            .container {
+                background: white;
+                padding: 40px;
+                border-radius: 10px;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+                max-width: 500px;
+                text-align: center;
+            }
+            h1 {
+                color: #333;
+                margin-top: 0;
+            }
+            p {
+                color: #666;
+                line-height: 1.6;
+                margin: 15px 0;
+            }
+            .mode-badge {
+                display: inline-block;
+                background: #667eea;
+                color: white;
+                padding: 8px 16px;
+                border-radius: 20px;
+                margin-bottom: 20px;
+                font-size: 14px;
+                font-weight: 600;
+            }
+            .instructions {
+                background: #f5f5f5;
+                padding: 20px;
+                border-radius: 5px;
+                margin: 20px 0;
+                text-align: left;
+            }
+            .instructions h3 {
+                margin-top: 0;
+                color: #333;
+            }
+            .instructions ol {
+                margin: 0;
+                padding-left: 20px;
+                color: #666;
+            }
+            .instructions li {
+                margin: 8px 0;
+            }
+            .code {
+                background: #333;
+                color: #4ade80;
+                padding: 2px 6px;
+                border-radius: 3px;
+                font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+                font-size: 12px;
+            }
+            .info {
+                background: #e3f2fd;
+                border-left: 4px solid #667eea;
+                padding: 15px;
+                margin: 20px 0;
+                text-align: left;
+                color: #1565c0;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="mode-badge">Development Mode</div>
+            <h1>👋 Welcome to MIT Connect</h1>
+            <p>Backend API is running, but frontend build was not found.</p>
+            
+            <div class="instructions">
+                <h3>🚀 To run the frontend:</h3>
+                <ol>
+                    <li>Open a new terminal in your project root</li>
+                    <li>Run: <span class="code">cd frontend && npm run dev</span></li>
+                    <li>Navigate to: <span class="code">http://localhost:5173</span></li>
+                </ol>
+            </div>
+            
+            <div class="info">
+                <strong>ℹ️ Info:</strong> The frontend dev server (port 5173) runs separately from the backend (port 5000) during development.
+            </div>
+            
+            <div class="instructions">
+                <h3>📦 For production deployment:</h3>
+                <ol>
+                    <li>Run: <span class="code">cd frontend && npm run build</span></li>
+                    <li>Then start backend normally</li>
+                    <li>Frontend will be served from port 5000</li>
+                </ol>
+            </div>
+            
+            <p style="margin-top: 30px; color: #999; font-size: 12px;">
+                Backend API available at: <span class="code">http://localhost:5000/api</span>
+            </p>
+        </div>
+    </body>
+    </html>
+    """
 
 
 @app.get("/")
 async def serve_frontend():
+    """Serve frontend: production build if available, otherwise show dev mode guide."""
     if DIST_INDEX_FILE.exists():
         return FileResponse(str(DIST_INDEX_FILE))
-    return {
-        "message": "Frontend build not found. Run `npm run build` to serve static UI from FastAPI, or run Vite dev server for frontend development."
-    }
+    # Return helpful HTML guide for development mode
+    from fastapi.responses import HTMLResponse
+    return HTMLResponse(content=get_dev_mode_html(), status_code=200)
 
 app.include_router(staff_router)
 app.include_router(faculty_router)
@@ -118,11 +239,18 @@ app.include_router(invoices_router)
 
 @app.get("/{full_path:path}")
 async def serve_react_app(full_path: str):
+    """Catch-all route: serve frontend for valid paths or 404 for API paths."""
+    # Don't interfere with API routes or Swagger docs
     if full_path.startswith("api") or full_path.startswith("docs"):
         raise HTTPException(status_code=404)
+    
+    # If production build exists, serve it
     if DIST_INDEX_FILE.exists():
         return FileResponse(str(DIST_INDEX_FILE))
-    raise HTTPException(status_code=404, detail="Frontend build not found")
+    
+    # In development mode, guide user to run frontend dev server
+    from fastapi.responses import HTMLResponse
+    return HTMLResponse(content=get_dev_mode_html(), status_code=200)
 
 
 if __name__ == "__main__":
