@@ -810,20 +810,93 @@ async def _get_next_faculty_id():
 @router.post("/admission/submit")
 async def submit_faculty_admission(faculty_data: dict = Body(...)):
     """Submit faculty admission from modal form"""
-    collection = await get_faculty_collection()
+    try:
+        # Log incoming data
+        print(f"📤 [Faculty Admission] Received payload: {faculty_data}")
+        
+        # Validate required fields
+        required_fields = ["fullName", "name", "email", "phone", "dateOfBirth", "department"]
+        missing_fields = [field for field in required_fields if not faculty_data.get(field)]
+        
+        if missing_fields:
+            error_msg = f"Missing required fields: {', '.join(missing_fields)}"
+            print(f"❌ [Faculty Admission] Validation error: {error_msg}")
+            raise HTTPException(
+                status_code=400,
+                detail=error_msg
+            )
+        
+        # Validate email format
+        email = faculty_data.get("email", "").strip()
+        if "@" not in email or "." not in email.split("@")[-1]:
+            error_msg = "Invalid email format"
+            print(f"❌ [Faculty Admission] {error_msg}: {email}")
+            raise HTTPException(
+                status_code=400,
+                detail=error_msg
+            )
+        
+        # Validate phone (10 digits)
+        phone = str(faculty_data.get("phone", "")).replace(" ", "").replace("-", "")
+        if not phone.isdigit() or len(phone) != 10:
+            error_msg = f"Phone number must be exactly 10 digits (got {len(phone)})"
+            print(f"❌ [Faculty Admission] {error_msg}: {faculty_data.get('phone')}")
+            raise HTTPException(
+                status_code=400,
+                detail="Phone number must be exactly 10 digits"
+            )
+        
+        collection = await get_faculty_collection()
+        
+        # Check if email already exists
+        existing_email = await collection.find_one({"email": email})
+        if existing_email:
+            error_msg = f"Faculty with this email already exists"
+            print(f"❌ [Faculty Admission] {error_msg}: {email}")
+            raise HTTPException(
+                status_code=400,
+                detail=error_msg
+            )
+        
+        # Generate unique employeeId
+        employee_id = await _get_next_faculty_id()
+        print(f"✅ [Faculty Admission] Generated Employee ID: {employee_id}")
+        
+        # Prepare faculty document
+        faculty_doc = {
+            **faculty_data,
+            "employeeId": employee_id,
+            "id": employee_id,
+            "password": employee_id,
+            "created_at": datetime.now(),
+            "status": "Pending",
+            "type": "faculty",
+            "role": "faculty"
+        }
+        
+        # Remove None/empty values for cleaner storage
+        faculty_doc = {k: v for k, v in faculty_doc.items() if v is not None}
+        
+        # Insert into faculty collection
+        result = await collection.insert_one(faculty_doc)
+        print(f"✅ [Faculty Admission] Document inserted with MongoDB ID: {result.inserted_id}")
+        
+        created_doc = await collection.find_one({"_id": result.inserted_id})
+        response = serialize_doc(created_doc)
+        print(f"✅ [Faculty Admission] Successfully created faculty admission for {email}")
+        return response
     
-    # Generate unique employeeId
-    employee_id = await _get_next_faculty_id()
-    faculty_data["employeeId"] = employee_id
-    faculty_data["id"] = employee_id  # For frontend consistency
-    faculty_data["password"] = employee_id # Default password is same as ID
-    faculty_data["created_at"] = datetime.now()
-    
-    # Insert into faculty collection
-    result = await collection.insert_one(faculty_data)
-    
-    created_doc = await collection.find_one({"_id": result.inserted_id})
-    return serialize_doc(created_doc)
+    except HTTPException:
+        raise
+    except Exception as e:
+        error_msg = str(e)
+        print(f"❌ [Faculty Admission] Unhandled error: {error_msg}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to process faculty admission: {error_msg}"
+        )
 
 
 @router.post("/login")
