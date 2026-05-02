@@ -42,11 +42,14 @@ export default function StudentTable({ students, onEdit, onDelete }) {
               </td>
             </tr>
           ) : (
-            students.map((s) => (
+            students.map((s) => {
+              // Use student_id, id, or rollNumber - fallback to _id
+              const studentId = s.student_id || s.id || s.rollNumber || s._id;
+              return (
               <tr
                 key={s.rollNumber || s._id}
                 className="hover:bg-slate-50 transition-colors cursor-pointer"
-                onClick={() => navigate(`/students/${encodeURIComponent(s.rollNumber || s._id)}`)}
+                onClick={() => studentId && navigate(`/students/${encodeURIComponent(studentId)}`)}
               >
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
@@ -59,7 +62,7 @@ export default function StudentTable({ students, onEdit, onDelete }) {
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-slate-900">{s.name}</p>
-                      <p className="text-xs text-slate-500">{s.rollNumber || s.id}</p>
+                      <p className="text-xs text-slate-500">{s.student_id || s.rollNumber || s.id}</p>
                     </div>
                   </div>
                 </td>
@@ -97,6 +100,7 @@ export default function StudentTable({ students, onEdit, onDelete }) {
                   </div>
                 </td>
               </tr>
+            )}
             ))
           )}
         </tbody>

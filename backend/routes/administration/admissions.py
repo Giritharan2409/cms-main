@@ -339,6 +339,133 @@ async def purge_invalid_approved():
     }
 
 
+# Helper functions for auto-creation of Student/Faculty from approved admissions
+
+async def _create_student_from_admission(admission: dict[str, Any]) -> bool:
+    """Create a Student record from an approved admission."""
+    try:
+        db = get_db()
+        students_collection = db["students"]
+        
+        # Check if student already exists by email or admission_id
+        existing = await students_collection.find_one({
+            "$or": [
+                {"email": admission.get("email")},
+                {"admission_id": admission.get("id") or admission.get("admission_id")}
+            ]
+        })
+        
+        if existing:
+            print(f"[INFO] Student already exists for admission {admission.get('id')}")
+            return False  # Skip duplicate
+        
+        # Extract data from admission
+        admission_id = admission.get("id") or admission.get("admission_id")
+        name = admission.get("name") or admission.get("fullName") or ""
+        
+        # Generate student_id if not exists
+        student_id = admission.get("id") or f"STU-{int(datetime.now(timezone.utc).timestamp() * 1000)}"
+        
+        # Determine department and semester from admission
+        course_info = admission.get("course_info") or {}
+        department = course_info.get("category") or admission.get("courseCategory") or "General"
+        
+        student_data = {
+            "roll_number": student_id,
+            "student_id": student_id,
+            "name": name,
+            "email": admission.get("email") or "",
+            "phone": admission.get("phone") or "",
+            "gender": admission.get("gender") or "",
+            "dob": admission.get("dateOfBirth") or admission.get("dob"),
+            "address": admission.get("address") or "",
+            "department_id": department,
+            "department": department,
+            "year": 1,
+            "semester": 1,
+            "status": "Active",
+            "admission_id": admission_id,
+            "created_at": _utc_now_iso(),
+            "avatar": f"https://ui-avatars.com/api/?name={name}&background=1162d4&color=fff",
+            "section": "A",
+            "cgpa": 0.0,
+            "attendance_pct": 0.0,
+            "fee_status": "Pending",
+            "guardian": "",
+            "guardian_phone": "",
+            "enroll_date": _today_ymd()
+        }
+        
+        result = await students_collection.insert_one(student_data)
+        print(f"[SUCCESS] Created student {student_id} from admission {admission_id}")
+        return True
+        
+    except Exception as e:
+        print(f"[ERROR] Failed to create student from admission: {str(e)}")
+        return False
+
+
+async def _create_faculty_from_admission(admission: dict[str, Any]) -> bool:
+    """Create a Faculty record from an approved admission."""
+    try:
+        db = get_db()
+        faculty_collection = db["faculty"]
+        
+        # Check if faculty already exists by email or admission_id
+        existing = await faculty_collection.find_one({
+            "$or": [
+                {"email": admission.get("email")},
+                {"admission_id": admission.get("id") or admission.get("admission_id")}
+            ]
+        })
+        
+        if existing:
+            print(f"[INFO] Faculty already exists for admission {admission.get('id')}")
+            return False  # Skip duplicate
+        
+        # Extract data from admission
+        admission_id = admission.get("id") or admission.get("admission_id")
+        name = admission.get("name") or admission.get("fullName") or ""
+        
+        # Generate faculty_id/employee_id if not exists
+        faculty_id = admission.get("id") or f"FAC-{int(datetime.now(timezone.utc).timestamp() * 1000) % 10000}"
+        
+        # Determine department from admission
+        course_info = admission.get("course_info") or {}
+        department = course_info.get("category") or admission.get("courseCategory") or "General"
+        
+        faculty_data = {
+            "employee_id": faculty_id,
+            "faculty_id": faculty_id,
+            "name": name,
+            "email": admission.get("email") or "",
+            "phone": admission.get("phone") or "",
+            "department_id": department,
+            "department": department,
+            "designation": admission.get("designation") or "Assistant Professor",
+            "status": "Active",
+            "employment_status": "Active",
+            "admission_id": admission_id,
+            "created_at": _utc_now_iso(),
+            "qualifications": [],
+            "specializations": [],
+            "office_location": "",
+            "office_hours": [],
+            "research_interests": [],
+            "join_date": _today_ymd(),
+            "publications": [],
+            "compliance_status": "Compliant"
+        }
+        
+        result = await faculty_collection.insert_one(faculty_data)
+        print(f"[SUCCESS] Created faculty {faculty_id} from admission {admission_id}")
+        return True
+        
+    except Exception as e:
+        print(f"[ERROR] Failed to create faculty from admission: {str(e)}")
+        return False
+
+
 @router.put("/approve/{admission_id}")
 async def approve_admission(admission_id: str):
     admissions_collection = _admissions_collection()
@@ -367,7 +494,18 @@ async def approve_admission(admission_id: str):
 
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Admission not found")
-
+    
+    # Fetch the updated admission record
+    updated_admission = await admissions_collection.find_one(_build_lookup_query(admission_id))
+    
+    # Auto-create Student or Faculty record based on type
+    admission_type = updated_admission.get("type") or updated_admission.get("role") or "student"
+    
+    if admission_type.lower() == "student":
+        await _create_student_from_admission(updated_admission)
+    elif admission_type.lower() == "faculty":
+        await _create_faculty_from_admission(updated_admission)
+    
     return {"message": "Admission approved successfully", "id": admission_id}
 
 
@@ -474,6 +612,13 @@ async def approve_faculty_admission(faculty_admission_id: str):
     """Approve faculty admission"""
     faculty_admissions_collection = _faculty_admissions_collection()
     
+    # Fetch the admission first
+    admission = await faculty_admissions_collection.find_one(
+        _build_faculty_lookup_query(faculty_admission_id)
+    )
+    if not admission:
+        raise HTTPException(status_code=404, detail="Faculty admission not found")
+    
     result = await faculty_admissions_collection.update_one(
         _build_faculty_lookup_query(faculty_admission_id),
         {"$set": {"status": "Approved", "updated_at": _utc_now_iso()}},
@@ -481,6 +626,14 @@ async def approve_faculty_admission(faculty_admission_id: str):
     
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Faculty admission not found")
+    
+    # Fetch the updated admission record
+    updated_admission = await faculty_admissions_collection.find_one(
+        _build_faculty_lookup_query(faculty_admission_id)
+    )
+    
+    # Auto-create Faculty record
+    await _create_faculty_from_admission(updated_admission)
     
     return {"message": "Faculty admission approved successfully", "id": faculty_admission_id}
 

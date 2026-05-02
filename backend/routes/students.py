@@ -325,7 +325,22 @@ async def list_students():
 
     rows = []
     async for row in db["students"].find().sort("_id", -1):
-        rows.append(serialize_doc(row))
+        serialized = serialize_doc(row)
+        
+        # Ensure student_id is always present
+        if not serialized.get("student_id"):
+            serialized["student_id"] = serialized.get("id") or serialized.get("rollNumber") or str(serialized.get("_id"))
+        
+        # Ensure id field is present
+        if not serialized.get("id"):
+            serialized["id"] = serialized.get("student_id") or serialized.get("rollNumber")
+        
+        # Ensure rollNumber is present
+        if not serialized.get("rollNumber"):
+            serialized["rollNumber"] = serialized.get("student_id") or serialized.get("id")
+        
+        rows.append(serialized)
+    
     return rows
 
 
@@ -340,7 +355,7 @@ async def get_student(student_id: str):
                 (
                     item
                     for item in DEV_STORE["students"]
-                    if item.get("id") == student_id or item.get("rollNumber") == student_id
+                    if item.get("id") == student_id or item.get("rollNumber") == student_id or item.get("student_id") == student_id
                 ),
                 None,
             )
@@ -349,9 +364,24 @@ async def get_student(student_id: str):
             return deepcopy(row)
         raise
 
+    # Try multiple lookup strategies
     row = await db["students"].find_one(
-        {"$or": [{"id": student_id}, {"rollNumber": student_id}]}
+        {"$or": [
+            {"id": student_id}, 
+            {"rollNumber": student_id},
+            {"student_id": student_id}
+        ]}
     )
+    
+    # If not found by string ID, try as MongoDB ObjectId
+    if not row:
+        try:
+            from bson import ObjectId
+            if ObjectId.is_valid(student_id):
+                row = await db["students"].find_one({"_id": ObjectId(student_id)})
+        except:
+            pass
+    
     if not row:
         raise HTTPException(status_code=404, detail="Student not found")
     return serialize_doc(row)
@@ -405,7 +435,7 @@ async def update_student(student_id: str, payload: dict):
                 (
                     item
                     for item in DEV_STORE["students"]
-                    if item.get("id") == student_id or item.get("rollNumber") == student_id
+                    if item.get("id") == student_id or item.get("rollNumber") == student_id or item.get("student_id") == student_id
                 ),
                 None,
             )
@@ -415,8 +445,25 @@ async def update_student(student_id: str, payload: dict):
             return deepcopy(target)
         raise
 
+    # Build lookup query with multiple strategies
+    lookup_query = {
+        "$or": [
+            {"id": student_id},
+            {"rollNumber": student_id},
+            {"student_id": student_id}
+        ]
+    }
+    
+    # Try by ObjectId if not found by string
+    try:
+        from bson import ObjectId
+        if ObjectId.is_valid(student_id):
+            lookup_query["$or"].append({"_id": ObjectId(student_id)})
+    except:
+        pass
+
     result = await db["students"].find_one_and_update(
-        {"$or": [{"id": student_id}, {"rollNumber": student_id}]},
+        lookup_query,
         {"$set": payload},
         return_document=ReturnDocument.AFTER,
     )
@@ -436,16 +483,31 @@ async def delete_student(student_id: str):
             DEV_STORE["students"] = [
                 item
                 for item in DEV_STORE["students"]
-                if item.get("id") != student_id and item.get("rollNumber") != student_id
+                if item.get("id") != student_id and item.get("rollNumber") != student_id and item.get("student_id") != student_id
             ]
             if len(DEV_STORE["students"]) == before:
                 raise HTTPException(status_code=404, detail="Student not found")
             return {"message": "Student deleted"}
         raise
 
-    result = await db["students"].delete_one(
-        {"$or": [{"id": student_id}, {"rollNumber": student_id}]}
-    )
+    # Build lookup query with multiple strategies
+    lookup_query = {
+        "$or": [
+            {"id": student_id},
+            {"rollNumber": student_id},
+            {"student_id": student_id}
+        ]
+    }
+    
+    # Try by ObjectId if not found by string
+    try:
+        from bson import ObjectId
+        if ObjectId.is_valid(student_id):
+            lookup_query["$or"].append({"_id": ObjectId(student_id)})
+    except:
+        pass
+
+    result = await db["students"].delete_one(lookup_query)
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Student not found")
     return {"message": "Student deleted"}
@@ -460,7 +522,7 @@ async def add_student_subject(student_id: str, subject: dict):
             _seed_dev_students()
             target = next(
                 (item for item in DEV_STORE["students"] 
-                 if item.get("id") == student_id or item.get("rollNumber") == student_id),
+                 if item.get("id") == student_id or item.get("rollNumber") == student_id or item.get("student_id") == student_id),
                 None
             )
             if not target:
@@ -471,8 +533,25 @@ async def add_student_subject(student_id: str, subject: dict):
             return subject
         raise
 
+    # Build lookup query with multiple strategies
+    lookup_query = {
+        "$or": [
+            {"id": student_id},
+            {"rollNumber": student_id},
+            {"student_id": student_id}
+        ]
+    }
+    
+    # Try by ObjectId if not found by string
+    try:
+        from bson import ObjectId
+        if ObjectId.is_valid(student_id):
+            lookup_query["$or"].append({"_id": ObjectId(student_id)})
+    except:
+        pass
+
     result = await db["students"].find_one_and_update(
-        {"$or": [{"id": student_id}, {"rollNumber": student_id}]},
+        lookup_query,
         {"$push": {"subjects": subject}},
         return_document=ReturnDocument.AFTER
     )

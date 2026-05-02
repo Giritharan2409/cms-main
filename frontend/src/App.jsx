@@ -11,7 +11,7 @@ import PlacementPage from './pages/PlacementPage';
 import FacilityPage from './pages/FacilityPage';
 import SettingsPage from './pages/SettingsPage';
 import StudentPageWrapper from './pages/StudentPageWrapper';
-import StudentDetailPage from './pages/StudentDetailPage';
+import StudentProfilePage from './pages/StudentProfilePage';
 import NotificationsPage from './pages/NotificationsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import PayrollPage from './pages/PayrollPage';
@@ -78,7 +78,7 @@ export default function App() {
           }
         />
         <Route path="/students" element={<ProtectedRoute><StudentPageWrapper /></ProtectedRoute>} />
-        <Route path="/students/:id" element={<ProtectedRoute><StudentDetailPage /></ProtectedRoute>} />
+        <Route path="/students/:id" element={<ProtectedRoute><StudentProfilePage /></ProtectedRoute>} />
         <Route path="/faculty" element={<ProtectedRoute><FacultyPage /></ProtectedRoute>} />
         <Route path="/faculty/:id" element={<ProtectedRoute><FacultyProfilePage /></ProtectedRoute>} />
         <Route path="/department" element={<ProtectedRoute><FacultyDepartmentPage /></ProtectedRoute>} />
