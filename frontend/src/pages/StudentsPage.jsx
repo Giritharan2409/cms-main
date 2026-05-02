@@ -146,7 +146,7 @@ export default function StudentsPage() {
           isOpen={isModalOpen}
           onClose={handleModalClose}
           onSuccess={handleSuccess}
-          editingStudent={editingStudent}
+          editStudent={editingStudent}
         />
       )}
     </Layout>

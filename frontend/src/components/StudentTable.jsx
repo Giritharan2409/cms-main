@@ -100,8 +100,8 @@ export default function StudentTable({ students, onEdit, onDelete }) {
                   </div>
                 </td>
               </tr>
-            )}
-            ))
+              );
+            })
           )}
         </tbody>
       </table>

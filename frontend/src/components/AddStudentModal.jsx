@@ -64,9 +64,11 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
         ...editStudent,
         dob: formatDate(editStudent.dob),
         enrollDate: formatDate(editStudent.enrollDate),
-        docs: editStudent.docs || initialData.docs
+        docs: editStudent.docs || initialData.docs,
+        rollNumber: editStudent.rollNumber || editStudent.id || formData.id
       });
       if (editStudent.avatar) setAvatarPreview(editStudent.avatar);
+      setErrors({});
       setStep(1);
     } else {
       const draft = localStorage.getItem('add_student_draft');
@@ -82,6 +84,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
         setFormData(initialData);
         setAvatarPreview(null);
       }
+      setErrors({});
       setStep(1);
     }
   }, [isOpen, editStudent]);
@@ -249,16 +252,11 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
               </div>
               {editStudent ? 'Edit Student Details' : 'Enroll New Student'}
             </h2>
-            <p className="text-sm text-slate-500 mt-1">Step {step} of 5: {steps[step-1].label} Information</p>
+            <p className="text-sm text-slate-500 mt-1">Step {step} of {editStudent ? '3' : '5'}: {steps[step-1].label} Information</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors">
-            <span className="material-symbols-outlined">close</span>
-          </button>
         </div>
 
-        {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-8 bg-white custom-scrollbar">
-          
+        <div className="px-8 py-6 overflow-y-auto flex-1">
           {/* Step 1: Personal */}
           {step === 1 && (
             <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
@@ -602,7 +600,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
                    disabled={isSubmitting}
                    className={`px-6 py-2.5 ${isSubmitting ? 'bg-slate-400' : 'bg-emerald-600 hover:bg-emerald-700'} text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2`}
                 >
-                  {isSubmitting ? 'Processing...' : editStudent ? 'Save Changes' : 'Complete Enrollment'}
+                  {isSubmitting ? 'Processing...' : editStudent ? 'Update Student' : 'Complete Enrollment'}
                   <span className="material-symbols-outlined text-base">{isSubmitting ? 'sync' : 'verified_user'}</span>
                 </button>
               )}

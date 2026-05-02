@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 
-export default function AddEditFacultyModal({ isOpen, onClose, onSuccess, editMode, initialData }) {
+export default function AddEditFacultyModal({ isOpen, onClose, onSuccess, editMode, initialData, faculty }) {
+  // Support both 'faculty' and 'initialData' props for edit
+  const editData = faculty || initialData;
   const [formData, setFormData] = useState({
     employeeId: '',
     name: '',
@@ -17,19 +19,23 @@ export default function AddEditFacultyModal({ isOpen, onClose, onSuccess, editMo
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (isOpen && editMode && initialData) {
+    if (!isOpen) return;
+
+    if (editData) {
+      // Edit mode - populate from existing data
       setFormData({
-        employeeId: initialData.employeeId || '',
-        name: initialData.name || '',
-        email: initialData.email || '',
-        phone: initialData.phone || '',
-        departmentId: initialData.departmentId || '',
-        designation: initialData.designation || '',
-        employment_status: initialData.employment_status || 'Active',
-        office_location: initialData.office_location || '',
+        employeeId: editData.employeeId || editData.employee_id || '',
+        name: editData.name || '',
+        email: editData.email || '',
+        phone: editData.phone || '',
+        departmentId: editData.departmentId || editData.department_id || '',
+        designation: editData.designation || '',
+        employment_status: editData.employment_status || 'Active',
+        office_location: editData.office_location || '',
       });
-    } else if (isOpen && !editMode) {
-      // Generate a simple ID for new
+      setError(null);
+    } else {
+      // Create mode - new empty form
       setFormData({
         employeeId: `FAC-${Math.floor(1000 + Math.random() * 9000)}`,
         name: '',
@@ -40,8 +46,9 @@ export default function AddEditFacultyModal({ isOpen, onClose, onSuccess, editMo
         employment_status: 'Active',
         office_location: '',
       });
+      setError(null);
     }
-  }, [isOpen, editMode, initialData]);
+  }, [isOpen, editData]);
 
   if (!isOpen) return null;
 
@@ -56,11 +63,12 @@ export default function AddEditFacultyModal({ isOpen, onClose, onSuccess, editMo
     setError(null);
     
     try {
-      const url = editMode 
+      const isEditing = !!editData;
+      const url = isEditing
         ? `/api/faculty/${formData.employeeId}`
         : `/api/faculty`;
         
-      const method = editMode ? 'PUT' : 'POST';
+      const method = isEditing ? 'PUT' : 'POST';
       
       const response = await fetch(url, {
         method,
@@ -89,10 +97,10 @@ export default function AddEditFacultyModal({ isOpen, onClose, onSuccess, editMo
         <div className="flex items-center justify-between p-6 border-b border-slate-100">
           <div>
             <h2 className="text-xl font-bold text-slate-800">
-              {editMode ? 'Edit Faculty Member' : 'Add New Faculty Member'}
+              {editData ? 'Edit Faculty Member' : 'Add New Faculty Member'}
             </h2>
             <p className="text-sm text-slate-500 mt-1">
-              {editMode ? 'Update existing records' : 'Enter details to create a new profile'}
+              {editData ? 'Update existing records' : 'Enter details to create a new profile'}
             </p>
           </div>
           <button 
@@ -240,7 +248,7 @@ export default function AddEditFacultyModal({ isOpen, onClose, onSuccess, editMo
             disabled={loading}
             className="px-6 py-2.5 text-sm font-bold text-white bg-green-700 rounded-xl hover:bg-green-800 active:scale-95 transition-all shadow-sm disabled:opacity-50 flex items-center gap-2"
           >
-            {loading ? 'Saving...' : 'Save Faculty'}
+            {loading ? 'Saving...' : editData ? 'Update Faculty' : 'Add Faculty'}
           </button>
         </div>
       </div>
