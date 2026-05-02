@@ -1,4 +1,4 @@
-import { getUserSession } from '../auth/sessionController'
+import { getUserSession, getUserData } from '../auth/sessionController'
 import { cmsRoles } from '../data/roleConfig'
 import { useState } from 'react'
 import ProfileDropdown from './ProfileDropdown'
@@ -13,8 +13,16 @@ export default function TopBar({
   const [globalSearch, setGlobalSearch] = useState('')
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const session = getUserSession()
+  const dynamicUser = getUserData()
   const role = session?.role || 'student'
-  const user = cmsRoles[role] || cmsRoles.student
+  
+  // Use dynamic data if available, otherwise fall back to role config
+  const user = dynamicUser ? {
+    name: dynamicUser.name || dynamicUser.fullName || dynamicUser.staffName || 'User',
+    label: dynamicUser.designation || dynamicUser.role || role.toUpperCase(),
+    team: dynamicUser.department || dynamicUser.departmentId || 'Department',
+    ...dynamicUser
+  } : (cmsRoles[role] || cmsRoles.student)
 
   return (
     <header className={`h-20 bg-white border-b border-slate-100 flex items-center justify-between sticky top-0 z-10 backdrop-blur-md bg-white/80 transition-all duration-300 ${isSidebarVisible ? 'px-10' : 'pl-24 pr-10'}`}>

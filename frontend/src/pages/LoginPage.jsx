@@ -84,7 +84,28 @@ export default function LoginPage() {
     setError('');
 
     window.setTimeout(async () => {
-      // 1. Try Dynamic Backend Login for Faculty
+      // 1. Try Dynamic Backend Login for Students
+      if (role === 'student') {
+        try {
+          const response = await fetch('/api/students/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: userId.trim(), password }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const sid = data.user.rollNumber || data.user.id;
+            createUserSession('student', sid, data.user);
+            navigate(`/dashboard?role=student`, { replace: true });
+            return;
+          }
+        } catch (err) {
+          console.error('Student backend login error:', err);
+        }
+      }
+
+      // 2. Try Dynamic Backend Login for Faculty
       if (role === 'faculty') {
         try {
           const response = await fetch('/api/faculty/login', {
@@ -95,8 +116,9 @@ export default function LoginPage() {
 
           if (response.ok) {
             const data = await response.json();
-            createUserSession('faculty', data.user.employeeId);
-            navigate(`/dashboard?role=faculty`, { replace: true });
+            const userRole = data.user.role || 'faculty';
+            createUserSession(userRole, data.user.employeeId, data.user);
+            navigate(`/dashboard?role=${encodeURIComponent(userRole)}`, { replace: true });
             return;
           }
         } catch (err) {

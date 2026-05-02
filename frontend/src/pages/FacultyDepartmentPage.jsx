@@ -3,6 +3,7 @@ import Layout from '../components/Layout';
 import KpiCard from '../components/KpiCard';
 import KpiGrid from '../components/KpiGrid';
 import { Building2, Users, BookOpen, Mail, MapPin, Share2, Edit, X, Save } from 'lucide-react';
+import { getUserData } from '../auth/sessionController';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
@@ -833,6 +834,9 @@ function ShareDepartmentModal({ isOpen, onClose, departmentName }) {
 }
 
 export default function FacultyDepartmentPage() {
+  const userData = getUserData();
+  const userDept = userData?.departmentId || userData?.department || '';
+  
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDept, setSelectedDept] = useState(null);
@@ -845,11 +849,21 @@ export default function FacultyDepartmentPage() {
     setTimeout(() => {
       setDepartments(mockDepartments);
       setLoading(false);
-      if (mockDepartments.length > 0) {
+      
+      // Try to find user's department first, otherwise default to first
+      const userDeptMatch = mockDepartments.find(d => 
+        d.code === userDept || 
+        d.name === userDept || 
+        (userDept && d.name.toLowerCase().includes(userDept.toLowerCase()))
+      );
+      
+      if (userDeptMatch) {
+        setSelectedDept(userDeptMatch);
+      } else if (mockDepartments.length > 0) {
         setSelectedDept(mockDepartments[0]);
       }
     }, 500);
-  }, []);
+  }, [userDept]);
 
   const handleEditSave = (updatedData) => {
     setSelectedDept(updatedData);
@@ -956,40 +970,56 @@ export default function FacultyDepartmentPage() {
                   Loading...
                 </div>
               ) : (
-                departments.map((dept) => (
-                  <button
-                    key={dept.id}
-                    onClick={() => setSelectedDept(dept)}
-                    style={{
-                      width: '100%',
-                      padding: '12px 16px',
-                      border: 'none',
-                      background: selectedDept?.id === dept.id ? '#eff6ff' : 'transparent',
-                      borderLeft: selectedDept?.id === dept.id ? '3px solid #276221' : '3px solid transparent',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      borderBottom: '1px solid #f3f4f6'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (selectedDept?.id !== dept.id) {
-                        e.target.style.background = '#f9fafb';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (selectedDept?.id !== dept.id) {
-                        e.target.style.background = 'transparent';
-                      }
-                    }}
-                  >
-                    <div style={{ fontSize: '13px', fontWeight: '600', color: selectedDept?.id === dept.id ? '#276221' : '#1f2937', marginBottom: '2px' }}>
-                      {dept.code}
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#6b7280', lineHeight: '1.2' }}>
-                      {dept.name.split(' & ')[0]}
-                    </div>
-                  </button>
-                ))
+                departments.map((dept) => {
+                  const isUserDept = dept.code === userDept || dept.name === userDept;
+                  return (
+                    <button
+                      key={dept.id}
+                      onClick={() => setSelectedDept(dept)}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        border: 'none',
+                        background: selectedDept?.id === dept.id ? '#eff6ff' : 'transparent',
+                        borderLeft: selectedDept?.id === dept.id ? '3px solid #276221' : '3px solid transparent',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        borderBottom: '1px solid #f3f4f6',
+                        position: 'relative'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (selectedDept?.id !== dept.id) {
+                          e.currentTarget.style.background = '#f9fafb';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (selectedDept?.id !== dept.id) {
+                          e.currentTarget.style.background = 'transparent';
+                        }
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: selectedDept?.id === dept.id ? '#276221' : '#1f2937', marginBottom: '2px' }}>
+                          {dept.code}
+                        </div>
+                        {isUserDept && (
+                          <span style={{ 
+                            fontSize: '9px', 
+                            background: '#dcfce7', 
+                            color: '#166534', 
+                            padding: '2px 6px', 
+                            borderRadius: '10px',
+                            fontWeight: '700'
+                          }}>YOUR DEPT</span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#6b7280', lineHeight: '1.2' }}>
+                        {dept.name.split(' & ')[0]}
+                      </div>
+                    </button>
+                  );
+                })
               )}
             </div>
           </div>

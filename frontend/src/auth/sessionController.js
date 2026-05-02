@@ -1,6 +1,6 @@
 import { demoUsers, getValidRole } from '../data/roleConfig';
 
-const AUTH_KEYS = ['cmsRole', 'cmsUserId', 'cmsAuthenticated'];
+const AUTH_KEYS = ['cmsRole', 'cmsUserId', 'cmsAuthenticated', 'cmsUser'];
 
 function clearCmsStorage(storage) {
   const keysToRemove = [];
@@ -15,13 +15,17 @@ function clearCmsStorage(storage) {
   keysToRemove.forEach((key) => storage.removeItem(key));
 }
 
-export function createUserSession(role, userId) {
+export function createUserSession(role, userId, userData = null) {
   const validRole = getValidRole(role);
   const normalizedUserId = userId.trim();
 
   sessionStorage.setItem('cmsRole', validRole);
   sessionStorage.setItem('cmsUserId', normalizedUserId);
   sessionStorage.setItem('cmsAuthenticated', 'true');
+  
+  if (userData) {
+    sessionStorage.setItem('cmsUser', JSON.stringify(userData));
+  }
 }
 
 export function destroyUserSession() {
@@ -42,15 +46,20 @@ export function getUserSession() {
     return null;
   }
 
-  // Allow any authenticated user with a valid role.
-  if (!isAuthenticated || !role || !userId) {
-    return null;
-  }
-
   return {
     role,
     userId,
   };
+}
+
+export function getUserData() {
+  const userData = sessionStorage.getItem('cmsUser');
+  if (!userData) return null;
+  try {
+    return JSON.parse(userData);
+  } catch (e) {
+    return null;
+  }
 }
 
 export function hasActiveSession() {

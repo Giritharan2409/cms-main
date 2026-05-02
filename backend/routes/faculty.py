@@ -807,6 +807,20 @@ async def _get_next_faculty_id():
     return "FAC001"
 
 
+def get_role_from_designation(designation: str) -> str:
+    """Map designation to system role"""
+    if not designation:
+        return "faculty"
+    
+    designation = designation.lower()
+    if any(keyword in designation for keyword in ["admin", "principal", "dean", "registrar"]):
+        return "admin"
+    if any(keyword in designation for keyword in ["accountant", "finance", "bursar"]):
+        return "finance"
+    if "student" in designation:
+        return "student"
+    return "faculty"
+
 @router.post("/admission/submit")
 async def submit_faculty_admission(faculty_data: dict = Body(...)):
     """Submit faculty admission from modal form"""
@@ -862,6 +876,10 @@ async def submit_faculty_admission(faculty_data: dict = Body(...)):
         employee_id = await _get_next_faculty_id()
         print(f"✅ [Faculty Admission] Generated Employee ID: {employee_id}")
         
+        # Determine role from designation
+        designation = faculty_data.get("designation", "Faculty")
+        role = get_role_from_designation(designation)
+        
         # Prepare faculty document
         faculty_doc = {
             **faculty_data,
@@ -871,7 +889,7 @@ async def submit_faculty_admission(faculty_data: dict = Body(...)):
             "created_at": datetime.now(),
             "status": "Pending",
             "type": "faculty",
-            "role": "faculty"
+            "role": role
         }
         
         # Remove None/empty values for cleaner storage
@@ -925,9 +943,14 @@ async def login_faculty(credentials: dict = Body(...)):
     if password != stored_password:
         raise HTTPException(status_code=401, detail="Invalid password")
         
+    user_serialized = serialize_doc(user)
+    # Ensure role is correctly mapped if not present or incorrect
+    if not user_serialized.get("role") or user_serialized.get("role") == "faculty":
+        user_serialized["role"] = get_role_from_designation(user_serialized.get("designation"))
+        
     return {
         "status": "success",
-        "user": serialize_doc(user)
+        "user": user_serialized
     }
 
 @router.get("/{faculty_id}")

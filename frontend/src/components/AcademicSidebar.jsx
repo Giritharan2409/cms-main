@@ -1,6 +1,6 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useRef } from 'react'
-import { getUserSession, destroyUserSession } from '../auth/sessionController'
+import { getUserSession, destroyUserSession, getUserData } from '../auth/sessionController'
 import { cmsRoles, roleMenuGroups } from '../data/roleConfig'
 
 const iconMap = {
@@ -48,9 +48,24 @@ export default function AcademicSidebar({ isSidebarVisible = true, onToggleSideb
   const location = useLocation()
   const navRef = useRef(null)
   const session = getUserSession()
+  const dynamicUser = getUserData()
   const role = session?.role || 'student'
-  const roleMeta = cmsRoles[role] || cmsRoles.student
-  const menuGroups = roleMenuGroups[role] || []
+  
+  const roleMeta = dynamicUser ? {
+    label: dynamicUser.designation || dynamicUser.role || role.toUpperCase(),
+    ...dynamicUser
+  } : (cmsRoles[role] || cmsRoles.student)
+
+  const menuGroups = [...(roleMenuGroups[role] || [])];
+  
+  // Dynamic features based on designation (e.g. HOD)
+  if (roleMeta.label === 'HOD' || (roleMeta.designation && roleMeta.designation.includes('HOD'))) {
+    // Add Department Management for HODs in Faculty role
+    const overviewGroup = menuGroups.find(g => g.title === 'Overview');
+    if (overviewGroup && !overviewGroup.items.includes('Reports')) {
+      overviewGroup.items.push('Reports');
+    }
+  }
 
   function getRoute(item) {
     if (item === 'Fees') {

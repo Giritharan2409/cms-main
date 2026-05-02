@@ -4,7 +4,7 @@ setlocal EnableDelayedExpansion
 set "ROOT_DIR=%~dp0"
 set "BACKEND_DIR=%ROOT_DIR%backend"
 set "FRONTEND_DIR=%ROOT_DIR%frontend"
-
+  
 echo =============================================
 echo MIT Connect startup script
 echo =============================================

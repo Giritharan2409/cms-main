@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { getUserSession } from '../auth/sessionController';
+import { getUserSession, getUserData } from '../auth/sessionController';
 import { cmsRoles, roleMenuGroups } from '../data/roleConfig';
 import { getStudentById } from '../data/studentData';
 import Layout from '../components/Layout';
@@ -12,10 +12,25 @@ export default function DashboardPage() {
   const location = useLocation();
 
   const session = getUserSession();
+  const dynamicUser = getUserData();
   const sessionRole = session?.role || null;
   const sessionUserId = session?.userId || null;
   const role = sessionRole || 'student';
-  const data = cmsRoles[role];
+  
+  const data = dynamicUser ? {
+    name: dynamicUser.name || dynamicUser.fullName || dynamicUser.staffName || 'User',
+    label: dynamicUser.designation || dynamicUser.role?.toUpperCase() || role.toUpperCase(),
+    ...cmsRoles[role], // Merge with default stats/tasks/alerts
+    ...dynamicUser,
+    // Override stats for students with dynamic values
+    stats: role === 'student' ? [
+      { value: dynamicUser.cgpa?.toString() || '0.0', label: 'Current GPA', sub: 'From academic record' },
+      { value: `${dynamicUser.attendancePct || 0}%`, label: 'Attendance', sub: dynamicUser.attendancePct >= 75 ? 'Good standing' : 'Low attendance' },
+      { value: dynamicUser.subjects?.length?.toString() || '0', label: 'Enrolled Courses', sub: 'Current semester' },
+      { value: dynamicUser.feeStatus || 'N/A', label: 'Fee Status', sub: 'Financial record' },
+    ] : (dynamicUser.stats || cmsRoles[role].stats)
+  } : (cmsRoles[role] || cmsRoles.student);
+
   const menuGroups = roleMenuGroups[role] || roleMenuGroups.student;
   const userId = sessionUserId || 'N/A';
   const roleQuery = `?role=${encodeURIComponent(role)}`;
