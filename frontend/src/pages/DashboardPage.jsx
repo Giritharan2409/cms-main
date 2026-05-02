@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { getUserSession } from '../auth/sessionController';
 import { cmsRoles, roleMenuGroups } from '../data/roleConfig';
 import { getStudentById } from '../data/studentData';
+import { getDashboardSummary } from '../services/dashboardService';
 import Layout from '../components/Layout';
 import KpiCard from '../components/KpiCard';
 import KpiGrid from '../components/KpiGrid';
@@ -10,6 +11,8 @@ import KpiGrid from '../components/KpiGrid';
 export default function DashboardPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [dashboardStats, setDashboardStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(true);
 
   const session = getUserSession();
   const sessionRole = session?.role || null;
@@ -65,9 +68,23 @@ export default function DashboardPage() {
       }
     }
 
+    // Fetch dashboard summary for admin/finance roles
+    async function fetchDashboardData() {
+      if (role === 'admin' || role === 'finance') {
+        setLoadingStats(true);
+        const summary = await getDashboardSummary();
+        if (summary) {
+          setDashboardStats(summary);
+        }
+        setLoadingStats(false);
+      }
+    }
+
+    fetchDashboardData();
+
     window.addEventListener('pageshow', enforceSessionOnPageRestore);
     return () => window.removeEventListener('pageshow', enforceSessionOnPageRestore);
-  }, [data.label, location.search, navigate, sessionRole, sessionUserId]);
+  }, [data.label, location.search, navigate, sessionRole, sessionUserId, role]);
 
   return (
     <Layout 
@@ -80,18 +97,63 @@ export default function DashboardPage() {
       <div className="mb-8">
                 <h3 className="text-xl font-bold text-gray-900 mb-4">Quick Overview</h3>
                 <KpiGrid>
-                  {data.stats.map((entry, index) => {
-                    const colorSchemes = ['blue', 'green', 'emerald', 'cyan'];
-                    return (
-                      <KpiCard
-                        key={entry.label}
-                        icon={entry.icon || 'dashboard'}
-                        label={entry.label}
-                        value={entry.value}
-                        colorScheme={colorSchemes[index % 4]}
-                      />
-                    );
-                  })}
+                  {(() => {
+                    // For admin/finance roles, use real data from API
+                    if ((role === 'admin' || role === 'finance') && dashboardStats) {
+                      const adminStats = [
+                        { 
+                          value: String(dashboardStats.total_students), 
+                          label: 'Total Students', 
+                          icon: 'group',
+                          sub: 'Approved & Active' 
+                        },
+                        { 
+                          value: String(dashboardStats.total_faculty), 
+                          label: 'Faculty Members', 
+                          icon: 'person',
+                          sub: 'Approved & Active' 
+                        },
+                        { 
+                          value: String(dashboardStats.active_events), 
+                          label: 'Active Events', 
+                          icon: 'event',
+                          sub: 'Current month' 
+                        },
+                        { 
+                          value: String(dashboardStats.dept_requests), 
+                          label: 'Dept Requests', 
+                          icon: 'assignment',
+                          sub: 'Pending action' 
+                        },
+                      ];
+                      return adminStats.map((entry, index) => {
+                        const colorSchemes = ['blue', 'green', 'emerald', 'cyan'];
+                        return (
+                          <KpiCard
+                            key={entry.label}
+                            icon={entry.icon}
+                            label={entry.label}
+                            value={entry.value}
+                            colorScheme={colorSchemes[index % 4]}
+                          />
+                        );
+                      });
+                    }
+                    
+                    // For other roles, use default stats from roleConfig
+                    return data.stats.map((entry, index) => {
+                      const colorSchemes = ['blue', 'green', 'emerald', 'cyan'];
+                      return (
+                        <KpiCard
+                          key={entry.label}
+                          icon={entry.icon || 'dashboard'}
+                          label={entry.label}
+                          value={entry.value}
+                          colorScheme={colorSchemes[index % 4]}
+                        />
+                      );
+                    });
+                  })()}
                 </KpiGrid>
               </div>
     </Layout>
