@@ -131,6 +131,51 @@ export default function AddFacultyPage() {
   };
 
   const handleSubmit = async () => {
+    // Validate required fields BEFORE submitting
+    if (!formData.fullName || !formData.fullName.trim()) {
+      alert('❌ Full Name is required');
+      setIsLoading(false);
+      return;
+    }
+    if (!formData.email || !formData.email.trim()) {
+      alert('❌ Email is required');
+      setIsLoading(false);
+      return;
+    }
+    // Validate email format
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      alert('❌ Please enter a valid email address');
+      setIsLoading(false);
+      return;
+    }
+    if (!formData.phone || !formData.phone.trim()) {
+      alert('❌ Phone number is required');
+      setIsLoading(false);
+      return;
+    }
+    // Validate phone format (10 digits)
+    const phoneDigits = formData.phone.replace(/\D/g, '');
+    if (phoneDigits.length !== 10) {
+      alert('❌ Phone number must be exactly 10 digits');
+      setIsLoading(false);
+      return;
+    }
+    if (!formData.dateOfBirth) {
+      alert('❌ Date of Birth is required');
+      setIsLoading(false);
+      return;
+    }
+    if (!formData.role || !formData.role.trim()) {
+      alert('❌ Designation is required');
+      setIsLoading(false);
+      return;
+    }
+    if (!formData.department || !formData.department.trim()) {
+      alert('❌ Department is required');
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     const facultyData = {
       fullName: formData.fullName,
@@ -148,25 +193,67 @@ export default function AddFacultyPage() {
       specialization: formData.specialization,
       university: formData.university,
       employmentType: formData.employmentType,
+      paymentMethod: formData.paymentMethod,
       paymentStatus: 'Paid',
       status: 'Pending',
+      type: 'faculty',
     };
 
     try {
-      const response = await fetch('/api/faculty/signup', {
+      console.log('📤 Submitting faculty data:', facultyData);
+
+      // Set up timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+      const response = await fetch('/api/faculty/admission/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(facultyData),
+        signal: controller.signal,
       });
 
-      if (!response.ok) throw new Error('Failed to submit');
+      clearTimeout(timeoutId);
+      console.log('📥 Response status:', response.status);
+
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: Failed to save admission`;
+        try {
+          const errorData = await response.json();
+          console.log('📥 Error response:', errorData);
+          errorMessage = errorData.detail || errorData.message || errorMessage;
+        } catch (e) {
+          console.log('⚠️ Could not parse error response:', e);
+          // Error response is not JSON
+        }
+        throw new Error(errorMessage);
+      }
+
+      let result;
+      try {
+        result = await response.json();
+        console.log('✅ Faculty application saved successfully:', result);
+      } catch (parseError) {
+        console.warn('⚠️ Response is not JSON, but submission was successful');
+        result = { employeeId: 'FAC-' + Date.now(), id: 'FAC-' + Date.now() };
+      }
 
       addFacultyApp(facultyData);
-      alert('Faculty application submitted successfully!');
+      
+      const empId = result.employeeId || result.id || 'Processing';
+      alert(`✅ Faculty application submitted successfully!\n\nEmployee ID: ${empId}\n\nYour application is now under review.`);
       navigate('/admission');
     } catch (error) {
-      console.error('Submission error:', error);
-      alert('Failed to submit application');
+      if (error.name === 'AbortError') {
+        console.error('❌ Request timeout:', error);
+        alert('❌ Connection timeout. Please check if backend server is running on port 8000.\n\nTroubleshoot:\n1. Start backend: python -m uvicorn main:app --host 0.0.0.0 --port 8000\n2. Check vite.config.js proxy settings\n3. Verify API base URL');
+      } else if (error instanceof TypeError) {
+        console.error('❌ Network error:', error);
+        alert('❌ Network error - Failed to reach backend server.\n\nPlease ensure:\n1. Backend is running on port 8000\n2. No network firewall blocking\n3. API base URL is correctly configured');
+      } else {
+        console.error('❌ Error submitting faculty admission:', error);
+        alert(`❌ Error: ${error.message}`);
+      }
       setIsLoading(false);
     }
   };
