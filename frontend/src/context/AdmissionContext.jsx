@@ -110,12 +110,30 @@ export function AdmissionProvider({ children }) {
           ? `${API_BASE}/admissions/approve/${id}`
           : `${API_BASE}/admissions/reject/${id}`;
 
-      await fetch(endpoint, { method: 'PUT' });
+      const response = await fetch(endpoint, { method: 'PUT' });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to update student status: ${response.statusText}`);
+      }
 
-      fetchStudentAdmissions();
-      fetchApprovedStudents();
+      const result = await response.json();
+      console.log(`✅ Student ${id} ${status}:`, result);
+
+      // Refresh all data after status change
+      await Promise.all([
+        fetchStudentAdmissions(),
+        fetchApprovedStudents(),
+      ]);
+      
+      // Notify other parts of the app about the update
+      if (status === 'Approved') {
+        // Dispatch custom event to notify others (e.g., StudentsPage) to refresh
+        window.dispatchEvent(new CustomEvent('studentApproved', { detail: { id, ...result } }));
+      }
+      
     } catch (err) {
       console.error('❌ Error updating student:', err);
+      throw err;
     }
   };
 

@@ -384,7 +384,37 @@ async def get_student(student_id: str):
     
     if not row:
         raise HTTPException(status_code=404, detail="Student not found")
-    return serialize_doc(row)
+    
+    serialized = serialize_doc(row)
+    
+    # Fetch and attach fees for this student
+    try:
+        fees_collection = db["fees_structure"]
+        fees = []
+        async for fee in fees_collection.find({"student_id": student_id}):
+            fees.append(serialize_doc(fee))
+        
+        if fees:
+            serialized["fees"] = fees
+            # Calculate fee status based on payments
+            total_fee = sum(fee.get("total_fee", 0) for fee in fees)
+            total_paid = sum(fee.get("total_fee", 0) for fee in fees if fee.get("payment_status", "").lower() == "paid")
+            
+            if total_paid == 0:
+                serialized["feeStatus"] = "Pending"
+                serialized["fee_status"] = "Pending"
+            elif total_paid < total_fee:
+                serialized["feeStatus"] = "Partial"
+                serialized["fee_status"] = "Partial"
+            else:
+                serialized["feeStatus"] = "Paid"
+                serialized["fee_status"] = "Paid"
+    except Exception as e:
+        print(f"[INFO] Could not fetch fees for student {student_id}: {str(e)}")
+        # Don't fail if fees collection doesn't exist or is empty
+        pass
+    
+    return serialized
 
 
 @router.post("/login")
