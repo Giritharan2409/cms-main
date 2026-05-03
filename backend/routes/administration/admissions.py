@@ -347,61 +347,99 @@ async def _create_student_from_admission(admission: dict[str, Any]) -> bool:
         db = get_db()
         students_collection = db["students"]
         
-        # Check if student already exists by email or admission_id
-        existing = await students_collection.find_one({
-            "$or": [
-                {"email": admission.get("email")},
-                {"admission_id": admission.get("id") or admission.get("admission_id")}
-            ]
-        })
-        
-        if existing:
-            print(f"[INFO] Student already exists for admission {admission.get('id')}")
-            return False  # Skip duplicate
-        
         # Extract data from admission
         admission_id = admission.get("id") or admission.get("admission_id")
+        email = admission.get("email") or ""
+        
+        # Check if student already exists by email or admission_id
+        if admission_id:
+            existing = await students_collection.find_one({
+                "$or": [
+                    {"admission_id": admission_id},
+                    {"email": email} if email else {"email": ""}
+                ]
+            })
+            
+            if existing:
+                print(f"[INFO] Student already exists for admission {admission_id}")
+                return False  # Skip duplicate
+        
         name = admission.get("name") or admission.get("fullName") or ""
         
-        # Generate student_id if not exists
-        student_id = admission.get("id") or f"STU-{int(datetime.now(timezone.utc).timestamp() * 1000)}"
+        # Use admission ID as student_id (it's already guaranteed to exist)
+        student_id = admission_id
         
         # Determine department and semester from admission
         course_info = admission.get("course_info") or {}
         department = course_info.get("category") or admission.get("courseCategory") or "General"
         
+        # Build student data with comprehensive field mappings
         student_data = {
-            "roll_number": student_id,
+            # ID Fields (CRITICAL - must have both)
+            "id": student_id,
             "student_id": student_id,
+            "roll_number": student_id,
+            "rollNumber": student_id,
+            
+            # Personal Information
             "name": name,
-            "email": admission.get("email") or "",
+            "email": email,
             "phone": admission.get("phone") or "",
             "gender": admission.get("gender") or "",
-            "dob": admission.get("dateOfBirth") or admission.get("dob"),
+            "dateOfBirth": admission.get("dateOfBirth") or admission.get("dob") or "",
+            "dob": admission.get("dateOfBirth") or admission.get("dob") or "",
             "address": admission.get("address") or "",
+            "city": admission.get("city") or "",
+            "state": admission.get("state") or "",
+            "pincode": admission.get("pincode") or "",
+            
+            # Academic Information
             "department_id": department,
             "department": department,
             "year": 1,
             "semester": 1,
+            "section": "A",
+            
+            # Status and Dates
             "status": "Active",
             "admission_id": admission_id,
             "created_at": _utc_now_iso(),
-            "avatar": f"https://ui-avatars.com/api/?name={name}&background=1162d4&color=fff",
-            "section": "A",
+            "enroll_date": _today_ymd(),
+            "enrollDate": _today_ymd(),
+            
+            # Academic Metrics
             "cgpa": 0.0,
             "attendance_pct": 0.0,
+            "attendancePct": 0.0,
+            
+            # Financial Information
             "fee_status": "Pending",
+            "feeStatus": "Pending",
+            
+            # Guardian Information
             "guardian": "",
             "guardian_phone": "",
-            "enroll_date": _today_ymd()
+            "guardianPhone": "",
+            
+            # Appearance
+            "avatar": f"https://ui-avatars.com/api/?name={name}&background=1162d4&color=fff",
+            
+            # Initialize empty collections
+            "subjects": [],
+            "fees": [],
+            "documents": [],
+            "attendanceMonthly": []
         }
         
         result = await students_collection.insert_one(student_data)
         print(f"[SUCCESS] Created student {student_id} from admission {admission_id}")
+        print(f"[SUCCESS] Inserted with MongoDB ID: {result.inserted_id}")
         return True
         
     except Exception as e:
         print(f"[ERROR] Failed to create student from admission: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return False
 
 
@@ -475,18 +513,27 @@ async def approve_admission(admission_id: str):
     if not admission:
         raise HTTPException(status_code=404, detail="Admission not found")
     
-    # Ensure the admission has an ID field (for fee assignment lookup)
+    # Ensure the admission has an ID field (for fee assignment lookup and student creation)
     update_data = {
         "status": "Approved",
         "updated_at": _utc_now_iso()
     }
     
     # If no ID field exists, generate one
-    if not admission.get("id") and not admission.get("admission_id"):
+    current_id = admission.get("id") or admission.get("admission_id")
+    if not current_id:
         new_id = f"STU-{int(datetime.now(timezone.utc).timestamp() * 1000)}"
         update_data["id"] = new_id
         update_data["admission_id"] = new_id
+        current_id = new_id
+    else:
+        # Ensure both id and admission_id are set consistently
+        if not admission.get("id"):
+            update_data["id"] = current_id
+        if not admission.get("admission_id"):
+            update_data["admission_id"] = current_id
     
+    # Update the admission with Approved status
     result = await admissions_collection.update_one(
         _build_lookup_query(admission_id),
         {"$set": update_data},
@@ -498,15 +545,33 @@ async def approve_admission(admission_id: str):
     # Fetch the updated admission record
     updated_admission = await admissions_collection.find_one(_build_lookup_query(admission_id))
     
+    if not updated_admission:
+        raise HTTPException(status_code=500, detail="Failed to fetch updated admission")
+    
+    print(f"[APPROVE] Admission {current_id} approved")
+    print(f"[APPROVE] Admission data: {updated_admission}")
+    
     # Auto-create Student or Faculty record based on type
     admission_type = updated_admission.get("type") or updated_admission.get("role") or "student"
     
     if admission_type.lower() == "student":
-        await _create_student_from_admission(updated_admission)
+        success = await _create_student_from_admission(updated_admission)
+        if success:
+            print(f"[SUCCESS] Student auto-created for admission {current_id}")
+        else:
+            print(f"[WARNING] Student auto-creation failed or skipped for admission {current_id}")
     elif admission_type.lower() == "faculty":
-        await _create_faculty_from_admission(updated_admission)
+        success = await _create_faculty_from_admission(updated_admission)
+        if success:
+            print(f"[SUCCESS] Faculty auto-created for admission {current_id}")
+        else:
+            print(f"[WARNING] Faculty auto-creation failed or skipped for admission {current_id}")
     
-    return {"message": "Admission approved successfully", "id": admission_id}
+    return {
+        "message": "Admission approved successfully",
+        "id": current_id,
+        "status": "Approved"
+    }
 
 
 @router.put("/reject/{admission_id}")

@@ -33,6 +33,21 @@ export default function StudentsPage() {
 
   useEffect(() => {
     fetchStudents()
+    
+    // Listen for student approval events from AdmissionContext
+    const handleStudentApproved = (event) => {
+      console.log('✅ Student approved event received:', event.detail);
+      // Refresh students list after a short delay to ensure DB is updated
+      setTimeout(() => {
+        fetchStudents();
+      }, 500);
+    };
+    
+    window.addEventListener('studentApproved', handleStudentApproved);
+    
+    return () => {
+      window.removeEventListener('studentApproved', handleStudentApproved);
+    };
   }, [])
 
   const handleDelete = async (student) => {

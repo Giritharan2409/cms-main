@@ -59,11 +59,17 @@ export default function AdmissionPage() {
     },
   ];
 
-  const handleApprove = (id) => {
-    if (activeTab === 'students') {
-      updateStudentStatus(id, 'Approved');
-    } else {
-      updateFacultyStatus(id, 'Approved');
+  const handleApprove = async (id) => {
+    try {
+      if (activeTab === 'students') {
+        await updateStudentStatus(id, 'Approved');
+        alert(`✅ Student ${id} approved successfully! They will now appear in the Students tab.`);
+      } else {
+        await updateFacultyStatus(id, 'Approved');
+        alert(`✅ Faculty ${id} approved successfully! They will now appear in the Faculty list.`);
+      }
+    } catch (error) {
+      alert(`❌ Error approving application: ${error.message}`);
     }
   };
 
