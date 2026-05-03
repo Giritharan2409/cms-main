@@ -427,8 +427,8 @@ export default function PayrollPage({ noLayout = false }) {
             const baseSalary = SALARY_MAP[role] || 0;
             // Robust experience lookup: try experience_years, experience, or 0
             const expYears = Number(staff.experience_years || staff.experience || 0);
-            const expBonus = 0;
-            const totalBasic = baseSalary;
+            const expBonus = expYears * 4000;
+            const totalBasic = baseSalary + expBonus;
 
             // Default values
             const hra = Number(staff.hra || 0);
@@ -635,6 +635,26 @@ export default function PayrollPage({ noLayout = false }) {
                                                                 style={{ display: 'inline-flex', alignItems: 'center', background: 'transparent', border: 'none', cursor: 'pointer', color: '#6b7280', padding: 4, borderRadius: 4 }}>
                                                                 <ViewIcon />
                                                             </button>
+                                                            {record.status !== 'Paid' && (
+                                                                <button 
+                                                                    onClick={async () => {
+                                                                        if (window.confirm(`Mark payroll as Paid for ${displayName}?`)) {
+                                                                            try {
+                                                                                const res = await fetch(`${API_BASE}/payroll/${record.id || record._id}`, {
+                                                                                    method: 'PUT',
+                                                                                    headers: { 'Content-Type': 'application/json' },
+                                                                                    body: JSON.stringify({ ...record, status: 'Paid' }),
+                                                                                });
+                                                                                if (!res.ok) throw new Error('Failed to update status');
+                                                                                await fetchPayroll();
+                                                                            } catch (err) { alert(err.message); }
+                                                                        }
+                                                                    }}
+                                                                    title="Mark as Paid"
+                                                                    style={{ display: 'inline-flex', alignItems: 'center', background: '#dcfce7', border: 'none', cursor: 'pointer', color: '#166534', padding: '4px 8px', borderRadius: 6, fontSize: 14, fontWeight: 600 }}>
+                                                                    💸
+                                                                </button>
+                                                            )}
                                                             <button onClick={() => setEditingRecord(record)} title="Edit Payroll"
                                                                 style={{ display: 'inline-flex', alignItems: 'center', background: 'transparent', border: 'none', cursor: 'pointer', color: '#6b7280', padding: 4, borderRadius: 4 }}>
                                                                 <EditIcon />
