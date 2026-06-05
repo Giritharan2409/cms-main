@@ -2,6 +2,12 @@ import { demoUsers, getValidRole } from '../data/roleConfig';
 
 const AUTH_KEYS = ['cmsRole', 'cmsUserId', 'cmsAuthenticated', 'cmsUser'];
 
+function notifyAuthChange() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('cms-auth-change'));
+  }
+}
+
 function clearCmsStorage(storage) {
   const keysToRemove = [];
 
@@ -26,6 +32,8 @@ export function createUserSession(role, userId, userData = null) {
   if (userData) {
     sessionStorage.setItem('cmsUser', JSON.stringify(userData));
   }
+
+  notifyAuthChange();
 }
 
 export function destroyUserSession() {
@@ -35,6 +43,8 @@ export function destroyUserSession() {
 
   // Clear any additional CMS auth/session attributes created in future modules.
   clearCmsStorage(sessionStorage);
+
+  notifyAuthChange();
 }
 
 export function getUserSession() {

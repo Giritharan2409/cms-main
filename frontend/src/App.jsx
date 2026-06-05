@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { getUserSession, hasActiveSession } from './auth/sessionController';
 import { AdmissionProvider } from './context/AdmissionContext';
@@ -31,8 +32,19 @@ import AddStudentPage from './pages/AddStudentPage';
 import AddFacultyPage from './pages/AddFacultyPage';
 
 export default function App() {
+  const [, setAuthVersion] = useState(0);
   const session = getUserSession();
   const activeSession = hasActiveSession();
+
+  useEffect(() => {
+    const handleAuthChange = () => setAuthVersion((prev) => prev + 1);
+    window.addEventListener('cms-auth-change', handleAuthChange);
+    window.addEventListener('storage', handleAuthChange);
+    return () => {
+      window.removeEventListener('cms-auth-change', handleAuthChange);
+      window.removeEventListener('storage', handleAuthChange);
+    };
+  }, []);
 
   return (
     <ErrorBoundary>

@@ -43,6 +43,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
   const [formData, setFormData] = useState(initialData);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const fileInputRef = useRef(null);
+  const maxStep = editStudent ? 3 : 5;
 
   // Load draft from localStorage on mount or populate from editStudent
   useEffect(() => {
@@ -59,13 +60,20 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
         }
       };
 
+      const normalizedId = editStudent.student_id || editStudent.rollNumber || editStudent.id || editStudent._id || initialData.id;
+      const normalizedGuardianName = editStudent.guardianName || editStudent.guardian || '';
+      const normalizedGuardianPhone = editStudent.guardianPhone || '';
+
       setFormData({
         ...initialData,
         ...editStudent,
         dob: formatDate(editStudent.dob),
         enrollDate: formatDate(editStudent.enrollDate),
         docs: editStudent.docs || initialData.docs,
-        rollNumber: editStudent.rollNumber || editStudent.id || formData.id
+        id: editStudent.id || normalizedId,
+        rollNumber: editStudent.rollNumber || editStudent.id || normalizedId,
+        guardianName: normalizedGuardianName,
+        guardianPhone: normalizedGuardianPhone
       });
       if (editStudent.avatar) setAvatarPreview(editStudent.avatar);
       setErrors({});
@@ -133,7 +141,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
     } else if (s === 3) {
       if (!formData.guardianName) newErrors.guardianName = 'Guardian Name is required';
       if (!formData.guardianPhone) newErrors.guardianPhone = 'Guardian Phone is required';
-    } else if (s === 4) {
+    } else if (s === 4 && !editStudent) {
       if (!formData.docs.marksheet10) newErrors.marksheet10 = '10th Marksheet is required';
       if (!formData.docs.marksheet12) newErrors.marksheet12 = '12th Marksheet is required';
       if (!formData.docs.aadhar) newErrors.aadhar = 'Aadhar Card is required';
@@ -145,7 +153,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
   };
 
   const handleNext = () => {
-    if (validateStep(step)) {
+    if (validateStep(step) && step < maxStep) {
       setStep(s => s + 1);
     }
   };
@@ -161,7 +169,9 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
       setIsSubmitting(true);
       try {
         // Prepare data for backend
-        const studentId = editStudent ? (editStudent.rollNumber || editStudent.id) : formData.id;
+        const studentId = editStudent
+          ? (editStudent.student_id || editStudent.rollNumber || editStudent.id || editStudent._id || formData.id)
+          : formData.id;
         const url = editStudent 
           ? `/api/students/${encodeURIComponent(studentId)}`
           : '/api/students';
@@ -171,6 +181,9 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
         // Format data to match backend schema
         const payload = {
           ...formData,
+          id: formData.id || formData.rollNumber || formData.student_id || studentId,
+          rollNumber: formData.rollNumber || formData.id || formData.student_id || studentId,
+          guardian: formData.guardianName || formData.guardian || '',
           semester: parseInt(formData.semester) || 1,
           enrollDate: formData.enrollDate ? new Date(formData.enrollDate).toISOString() : null,
           dob: formData.dob ? new Date(formData.dob).toISOString() : null,
@@ -222,12 +235,16 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
     return [];
   };
 
-  const steps = [
+  const steps = editStudent ? [
+    { id: 1, label: 'Personal' },
+    { id: 2, label: 'Academic' },
+    { id: 3, label: 'Guardian' }
+  ] : [
     { id: 1, label: 'Personal' },
     { id: 2, label: 'Academic' },
     { id: 3, label: 'Guardian' },
     { id: 4, label: 'Documents' },
-    { id: 5, label: 'Review' },
+    { id: 5, label: 'Review' }
   ];
 
   return (
@@ -252,7 +269,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
               </div>
               {editStudent ? 'Edit Student Details' : 'Enroll New Student'}
             </h2>
-            <p className="text-sm text-slate-500 mt-1">Step {step} of {editStudent ? '3' : '5'}: {steps[step-1].label} Information</p>
+            <p className="text-sm text-slate-500 mt-1">Step {step} of {maxStep}: {steps[step-1].label} Information</p>
           </div>
         </div>
 
@@ -411,7 +428,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
           )}
 
           {/* Step 4: Documents */}
-          {step === 4 && (
+          {!editStudent && step === 4 && (
             <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
               <div className="bg-orange-50/50 border border-orange-100 rounded-xl p-4 flex gap-3">
                 <span className="material-symbols-outlined text-orange-600">file_upload</span>
@@ -461,7 +478,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
           )}
 
           {/* Step 5: Review */}
-          {step === 5 && (
+          {!editStudent && step === 5 && (
             <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
               <div className="bg-[#276221]/5 border border-[#276221]/10 rounded-2xl p-6 relative overflow-hidden">
                 <div className="flex flex-col md:flex-row gap-6 relative z-10">
@@ -586,7 +603,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
                   PREVIOUS
                 </button>
               )}
-              {step < 5 ? (
+              {step < maxStep ? (
                 <button 
                   onClick={handleNext}
                   className="px-6 py-2.5 bg-[#276221] text-white rounded-lg text-sm font-semibold hover:bg-[#1e4618] transition-colors flex items-center gap-2"

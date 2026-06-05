@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { listTimetableDrafts, updateTimetableDraftStatus } from '../../api/examsApi';
+import { createExam, listTimetableDrafts, updateTimetableDraftStatus } from '../../api/examsApi';
 import { getUserSession } from '../../auth/sessionController';
 
 export default function TimetableApprovalModal({ onClose, onApprove }) {
@@ -30,6 +30,15 @@ export default function TimetableApprovalModal({ onClose, onApprove }) {
 
     const status = action === 'approve' ? 'Approved' : 'Rejected';
     try {
+      if (action === 'approve') {
+        const draft = drafts.find((item) => item.id === draftId);
+        if (draft?.exams?.length) {
+          await Promise.all(
+            draft.exams.map((exam) => createExam(buildExamPayload(exam, session)))
+          );
+        }
+      }
+
       await updateTimetableDraftStatus(draftId, {
         status,
         reviewedBy: session?.userId || session?.username || '',
@@ -54,6 +63,35 @@ export default function TimetableApprovalModal({ onClose, onApprove }) {
       case 'Rejected': return 'bg-red-100 text-red-700';
       default: return 'bg-slate-100 text-slate-700';
     }
+  };
+
+  const parseTimeToMinutes = (value) => {
+    if (!value) return null;
+    const [hours, minutes] = String(value).split(':').map(Number);
+    if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
+    return hours * 60 + minutes;
+  };
+
+  const buildExamPayload = (exam, currentSession) => {
+    const startMinutes = parseTimeToMinutes(exam?.startTime);
+    const endMinutes = parseTimeToMinutes(exam?.endTime);
+    const durationMinutes =
+      startMinutes !== null && endMinutes !== null && endMinutes > startMinutes
+        ? String(endMinutes - startMinutes)
+        : '';
+
+    return {
+      code: exam?.subjectCode || '',
+      name: exam?.subject || '',
+      date: exam?.date || '',
+      time: exam?.startTime || '',
+      room: exam?.room || '',
+      type: 'Mid-Sem',
+      status: 'Upcoming',
+      duration: durationMinutes,
+      maxMarks: '',
+      senderRole: currentSession?.role || 'admin',
+    };
   };
 
   return (
