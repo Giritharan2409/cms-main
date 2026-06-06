@@ -4,6 +4,7 @@ import { getUserSession } from '../auth/sessionController';
 import { cmsRoles, roleMenuGroups } from '../data/roleConfig';
 import Layout from '../components/Layout';
 import { Bell, Settings, User } from 'lucide-react';
+import SectionAccess from '../components/SectionAccess';
 
 // Mock modal component for attendance
 function AttendanceModal({ isOpen, onClose, onSubmit }) {
@@ -462,6 +463,9 @@ export default function FacultyDashboardPage() {
             })}
           </div>
         </div>
+
+          {/* Section Access */}
+          <SectionAccess role={role} />
       </div>
 
       {/* Modals */}

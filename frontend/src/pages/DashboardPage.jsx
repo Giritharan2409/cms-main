@@ -6,8 +6,9 @@ import { getStudentById } from '../data/studentData';
 import { getDashboardSummary } from '../services/dashboardService';
 import Layout from '../components/Layout';
 import KpiCard from '../components/KpiCard';
-import KpiGrid from '../components/KpiGrid';
 
+import KpiGrid from '../components/KpiGrid';
+import SectionAccess from '../components/SectionAccess';
 export default function DashboardPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -171,6 +172,9 @@ export default function DashboardPage() {
                   })()}
                 </KpiGrid>
               </div>
+
+      {/* Section Access */}
+      <SectionAccess role={role} />
     </Layout>
   );
 }

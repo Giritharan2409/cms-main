@@ -36,6 +36,7 @@ export default function AdminAdministrationDashboard() {
           const data = await res.json();
           setPayrollData(data);
         }
+        import SectionAccess from '../components/SectionAccess';
       } catch (error) {
         console.error('Error fetching payroll data:', error);
       }
@@ -193,6 +194,9 @@ export default function AdminAdministrationDashboard() {
           </div>
         </div>
       </div>
+
+        {/* Section Access */}
+        <SectionAccess role="admin" />
     </Layout>
   );
 }
