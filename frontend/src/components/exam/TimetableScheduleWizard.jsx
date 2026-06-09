@@ -178,7 +178,7 @@ export default function TimetableScheduleWizard({ isOpen, onClose, onSave }) {
         {/* Header */}
         <div style={{ padding: '20px 24px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f9fafb' }}>
           <h3 style={{ margin: 0, fontSize: 18, color: '#1f2937', fontWeight: 600 }}>Create Exam Schedule</h3>
-          <button onClick={handleClose} style={{ background: 'transparent', border: 'none', color: '#9ca3af', cursor: 'pointer' }}>
+          <button type="button" onClick={handleClose} style={{ background: 'transparent', border: 'none', color: '#9ca3af', cursor: 'pointer' }}>
             <CloseIcon />
           </button>
         </div>
@@ -282,6 +282,7 @@ export default function TimetableScheduleWizard({ isOpen, onClose, onSave }) {
                       <h5 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#1f2937' }}>Exam {idx + 1}</h5>
                       {exams.length > 1 && (
                         <button
+                          type="button"
                           onClick={() => handleRemoveExam(idx)}
                           style={{ background: '#fee2e2', color: '#991b1b', border: 'none', padding: '4px 8px', borderRadius: 4, fontSize: 12, fontWeight: 500, cursor: 'pointer' }}
                         >
@@ -364,6 +365,7 @@ export default function TimetableScheduleWizard({ isOpen, onClose, onSave }) {
               </div>
 
               <button
+                type="button"
                 onClick={handleAddExam}
                 style={{ width: '100%', padding: 12, background: '#f0f9ff', color: '#276221', border: '2px dashed #276221', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}
               >
@@ -433,6 +435,7 @@ export default function TimetableScheduleWizard({ isOpen, onClose, onSave }) {
         {/* Footer */}
         <div style={{ padding: '16px 24px', borderTop: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f9fafb' }}>
           <button
+            type="button"
             onClick={handleBack}
             disabled={wizardStep === 1}
             style={{ padding: '8px 16px', background: wizardStep === 1 ? '#f3f4f6' : '#fff', color: wizardStep === 1 ? '#d1d5db' : '#374151', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14, fontWeight: 500, cursor: wizardStep === 1 ? 'not-allowed' : 'pointer' }}
@@ -444,12 +447,14 @@ export default function TimetableScheduleWizard({ isOpen, onClose, onSave }) {
             {wizardStep === 3 && (
               <>
                 <button
+                  type="button"
                   onClick={handleSaveAsDraft}
                   style={{ padding: '8px 16px', background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
                 >
                   Save as Draft
                 </button>
                 <button
+                  type="button"
                   onClick={handleSubmitForApproval}
                   style={{ padding: '8px 16px', background: '#276221', color: '#fff', border: 'none', borderRadius: 6, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
                 >
@@ -460,6 +465,7 @@ export default function TimetableScheduleWizard({ isOpen, onClose, onSave }) {
 
             {wizardStep < 3 && (
               <button
+                type="button"
                 onClick={handleNext}
                 style={{ padding: '8px 16px', background: '#276221', color: '#fff', border: 'none', borderRadius: 6, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
               >

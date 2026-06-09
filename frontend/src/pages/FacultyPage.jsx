@@ -13,6 +13,8 @@ export default function FacultyPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [departmentFilter, setDepartmentFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingFaculty, setEditingFaculty] = useState(null);
@@ -41,9 +43,14 @@ export default function FacultyPage() {
   };
 
   const filteredFaculty = facultyList.filter(faculty =>
-    faculty.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    faculty.employeeId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    faculty.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    // apply department/status filters
+    (departmentFilter ? ((faculty.department || faculty.departmentId || '').toString().toLowerCase().includes(departmentFilter.toLowerCase())) : true) &&
+    (statusFilter ? ((faculty.employment_status || faculty.status || '').toString().toLowerCase().includes(statusFilter.toLowerCase())) : true) &&
+    (
+      faculty.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      faculty.employeeId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      faculty.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
   );
 
   const totalPages = Math.max(1, Math.ceil(filteredFaculty.length / ITEMS_PER_PAGE));
@@ -53,6 +60,65 @@ export default function FacultyPage() {
   const handleSearch = (query) => {
     setSearchQuery(query);
     setCurrentPage(1);
+  };
+
+  const handleFilterClick = () => {
+    const dep = window.prompt('Filter by department (leave empty to clear):', departmentFilter || '')
+    if (dep === null) return
+    setDepartmentFilter(dep || '')
+    const st = window.prompt('Filter by status (e.g. Active) (leave empty to clear):', statusFilter || '')
+    if (st === null) return
+    setStatusFilter(st || '')
+    setCurrentPage(1)
+  };
+
+  const handleExportClick = async () => {
+    const fmt = (window.prompt('Export format: csv or pdf (default csv)', 'csv') || 'csv').toLowerCase()
+    const rows = filteredFaculty.map(f => ({
+      Name: f.name || f.fullName || '',
+      EmployeeId: f.employeeId || f.id || '',
+      Email: f.email || '',
+      Department: f.department || f.departmentId || '',
+      Status: f.employment_status || f.status || ''
+    }))
+    if (rows.length === 0) { alert('No data to export'); return }
+
+    if (fmt === 'pdf') {
+      try {
+        const { jsPDF } = await import('jspdf')
+        const autoTableModule = await import('jspdf-autotable')
+        const doc = new jsPDF()
+        const header = Object.keys(rows[0])
+        const data = rows.map(r => header.map(h => r[h]))
+
+        const autoTable = autoTableModule && (autoTableModule.default || autoTableModule)
+        if (typeof autoTable === 'function') {
+          autoTable(doc, { head: [header], body: data, styles: { fontSize: 8 } })
+        } else if (typeof doc.autoTable === 'function') {
+          doc.autoTable({ head: [header], body: data, styles: { fontSize: 8 } })
+        } else {
+          throw new Error('jspdf-autotable plugin not available')
+        }
+
+        doc.save(`faculty_export_${new Date().toISOString().slice(0,10)}.pdf`)
+      } catch (e) {
+        console.error('PDF export failed', e)
+        alert('PDF export failed: ' + (e.message || e))
+      }
+      return
+    }
+
+    const header = Object.keys(rows[0]).join(',')
+    const csv = [header].concat(rows.map(r => Object.values(r).map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `faculty_export_${new Date().toISOString().slice(0,10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
   };
 
   const handleEditFaculty = (faculty) => {
@@ -114,6 +180,8 @@ export default function FacultyPage() {
             searchQuery={searchQuery}
             onSearchChange={handleSearch}
             placeholder="Search faculty by name, ID, or email..."
+            onFilterClick={handleFilterClick}
+            onExportClick={handleExportClick}
           />
         </div>
 
