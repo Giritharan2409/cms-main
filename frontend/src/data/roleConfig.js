@@ -106,7 +106,7 @@ export const roleMenuGroups = {
   student: [
     {
       title: 'Overview',
-      items: ['Dashboard', 'Department'],
+      items: ['Dashboard'],
     },
     {
       title: 'Academics',
@@ -118,7 +118,7 @@ export const roleMenuGroups = {
     },
     {
       title: 'Intelligence',
-      items: ['Notifications', 'Settings'],
+      items: ['Settings'],
     },
   ],
   admin: [
@@ -132,7 +132,7 @@ export const roleMenuGroups = {
     },
     {
       title: 'Intelligence',
-      items: ['Analytics', 'Notifications', 'Settings'],
+      items: ['Analytics', 'Settings'],
     },
     {
       title: 'Academics',
@@ -150,13 +150,13 @@ export const roleMenuGroups = {
     },
     {
       title: 'Intelligence',
-      items: ['Analytics', 'Notifications', 'Settings'],
+      items: ['Analytics', 'Settings'],
     },
   ],
   finance: [
     {
       title: 'Overview',
-      items: ['Dashboard', 'Department'],
+      items: ['Dashboard'],
     },
     {
       title: 'Administration',
@@ -164,7 +164,7 @@ export const roleMenuGroups = {
     },
     {
       title: 'Intelligence',
-      items: ['Analytics', 'Notifications', 'Settings'],
+      items: ['Analytics', 'Settings'],
     },
   ],
 };
