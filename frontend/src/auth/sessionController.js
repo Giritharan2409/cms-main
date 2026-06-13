@@ -75,3 +75,12 @@ export function getUserData() {
 export function hasActiveSession() {
   return Boolean(getUserSession());
 }
+
+export function updateUserData(newData) {
+  const current = getUserData();
+  if (current) {
+    const updated = { ...current, ...newData };
+    sessionStorage.setItem('cmsUser', JSON.stringify(updated));
+    notifyAuthChange();
+  }
+}

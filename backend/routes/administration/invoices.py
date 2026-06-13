@@ -19,6 +19,27 @@ async def get_invoices():
         invoices.append(serialize_doc(inv))
     return invoices
 
+@router.post("")
+async def create_invoice(body: dict):
+    """Create an invoice manually (e.g. from the admin fees page)."""
+    db = get_db()
+    invoice_id = body.get("invoice_id") or f"INV-{int(datetime.now().timestamp())}"
+    record = {
+        "invoice_id": invoice_id,
+        "student_id": body.get("student_id") or body.get("studentId", ""),
+        "student_name": body.get("student_name") or body.get("studentName", ""),
+        "course": body.get("course", ""),
+        "semester": body.get("semester", ""),
+        "items": body.get("items", []),
+        "total": body.get("total", 0),
+        "generated_date": body.get("generated_date") or datetime.now().isoformat(),
+        "payment_status": body.get("payment_status") or body.get("paymentStatus", "Pending"),
+        "generated_from": body.get("generated_from") or body.get("generatedFrom", ""),
+    }
+    result = await db["invoices"].insert_one(record)
+    record["_id"] = str(result.inserted_id)
+    return serialize_doc(record)
+
 @router.post("/generate-from-payroll/{payroll_id}")
 async def generate_invoice_from_payroll(payroll_id: str):
     db = get_db()

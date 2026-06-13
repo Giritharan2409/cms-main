@@ -1,13 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { userSettingsApi } from '../../api/userSettingsApi';
 import { useSettingsContext } from '../../context/SettingsContext';
-import { SaveToast, SectionActions, SectionError, SectionLoader, ToggleSwitch, isDirty } from './SettingsCommon';
+import { SettingsCard, SettingsActions, SettingsError, SettingsLoader, SettingsToast, ToggleRow, isDirty } from '../settings/SettingsPanelCommon';
 
 function labelFor(key) {
-  return key
-    .replace(/([A-Z])/g, ' $1')
-    .replace(/^./, (value) => value.toUpperCase())
-    .trim();
+  return key.replace(/([A-Z])/g, ' $1').replace(/^./, (v) => v.toUpperCase()).trim();
 }
 
 export default function NotificationSettings({ role, userId }) {
@@ -21,63 +18,34 @@ export default function NotificationSettings({ role, userId }) {
 
   useEffect(() => {
     let mounted = true;
+    setLoading(true);
+    userSettingsApi.getNotifications(role, userId).then((data) => {
+      if (!mounted) return;
+      setForm(data);
+      setBaseline(data);
+      setSectionData('notifications', data);
+    }).catch((e) => { if (mounted) setError(e.message); })
+    .finally(() => { if (mounted) setLoading(false); });
 
-    async function load() {
-      setLoading(true);
-      setError('');
-
-      try {
-        const data = await userSettingsApi.getNotifications(role, userId);
-        if (!mounted) {
-          return;
-        }
-
-        setForm(data);
-        setBaseline(data);
-        setSectionData('notifications', data);
-      } catch (loadError) {
-        if (mounted) {
-          setError(loadError.message);
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    }
-
-    load();
     return () => {
       mounted = false;
       markSectionDirty('notifications', false);
     };
   }, [markSectionDirty, role, setSectionData, userId]);
 
-  const dirty = useMemo(() => isDirty(form, baseline), [baseline, form]);
+  const dirty = useMemo(() => isDirty(form, baseline), [form, baseline]);
 
   useEffect(() => {
     markSectionDirty('notifications', dirty);
   }, [dirty, markSectionDirty]);
 
-  if (loading) {
-    return <SectionLoader label="Loading notification preferences..." />;
-  }
-
-  if (!form) {
-    return <SectionError message={error || 'Unable to load notification settings.'} />;
-  }
-
   function updateField(field, value) {
-    setForm((current) => ({
-      ...current,
-      [field]: value,
-    }));
+    setForm((cur) => ({ ...cur, [field]: value }));
   }
 
   async function handleSave() {
     setSaving(true);
     setError('');
-
     try {
       const response = await userSettingsApi.updateNotifications(role, userId, form);
       const updated = response.data;
@@ -85,8 +53,8 @@ export default function NotificationSettings({ role, userId }) {
       setBaseline(updated);
       setSectionData('notifications', updated);
       setToast('Notification preferences saved.');
-    } catch (saveError) {
-      setError(saveError.message);
+    } catch (e) {
+      setError(e.message);
     } finally {
       setSaving(false);
     }
@@ -97,28 +65,30 @@ export default function NotificationSettings({ role, userId }) {
     setToast('Notification preferences reset.');
   }
 
+  if (loading) return <SettingsLoader label="Loading notification preferences…" />;
+  if (!form) return <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8 text-sm text-red-500">{error || 'Unable to load notifications.'}</div>;
+
   return (
-    <section className="user-settings-section">
-      <header>
-        <h3>Notification Preferences</h3>
-        <p>Control alerts for academic updates, reminders, and communication.</p>
-      </header>
+    <div className="flex flex-col gap-5">
+      <SettingsError message={error} />
 
-      <SectionError message={error} />
+      <SettingsCard title="Notification Preferences" description="Control which alerts and updates you receive from MIT Connect.">
+        <div className="border border-slate-100 rounded-xl overflow-hidden">
+          {Object.entries(form)
+            .filter(([key]) => key !== 'email' && key !== 'sms')
+            .map(([key, value]) => (
+              <ToggleRow
+                key={key}
+                label={labelFor(key)}
+                checked={Boolean(value)}
+                onChange={(v) => updateField(key, v)}
+              />
+            ))}
+        </div>
+        <SettingsActions onSave={handleSave} onReset={handleReset} saving={saving} disableSave={!dirty} />
+      </SettingsCard>
 
-      <div className="user-settings-toggle-list">
-        {Object.entries(form).map(([key, value]) => (
-          <ToggleSwitch
-            key={key}
-            label={labelFor(key)}
-            checked={Boolean(value)}
-            onChange={(checked) => updateField(key, checked)}
-          />
-        ))}
-      </div>
-
-      <SectionActions onSave={handleSave} onReset={handleReset} saving={saving} disableSave={!dirty} />
-      <SaveToast message={toast} onClear={() => setToast('')} />
-    </section>
+      <SettingsToast message={toast} onClear={() => setToast('')} />
+    </div>
   );
 }

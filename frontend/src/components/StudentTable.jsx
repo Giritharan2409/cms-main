@@ -18,8 +18,8 @@ export default function StudentTable({ students, onEdit, onDelete }) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-      <table className="w-full text-left">
+    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm overflow-x-auto">
+      <table className="w-full text-left min-w-[700px]">
         <thead>
           <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
             <th className="px-6 py-4">Student Information</th>

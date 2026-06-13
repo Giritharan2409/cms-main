@@ -877,7 +877,7 @@ export default function StudentDetailPage() {
             <div className="relative">
               <div className="w-32 h-32 rounded-xl p-1 bg-gradient-to-br from-[#276221] to-[#60a5fa] shadow-xl">
                 <img
-                  src={student.avatar}
+                  src={student.avatar || `https://ui-avatars.com/api/?name=${student.name}&background=1162d4&color=fff&size=128`}
                   alt={student.name}
                   className="w-full h-full rounded-lg object-cover border-2 border-white"
                 />

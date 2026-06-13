@@ -74,24 +74,17 @@ function SettingsContent({ role, userId }) {
     <div className="flex min-h-screen bg-[#f8fafc] text-[#1e293b]">
       <AcademicSidebar isSidebarVisible={isSidebarVisible} onToggleSidebar={toggleSidebar} />
 
-      {!isSidebarVisible && (
-        <button
-          onClick={toggleSidebar}
-          className="fixed top-4 left-6 z-[60] p-3 rounded-xl shadow-lg bg-white border border-slate-200 hover:shadow-xl hover:scale-105 transition-all duration-300 flex items-center justify-center"
-          title="Show sidebar"
-        >
-          <span className="material-symbols-outlined text-[28px] text-black font-semibold">menu</span>
-        </button>
-      )}
 
-      <main className={`flex-1 flex flex-col transition-all duration-300 ${isSidebarVisible ? 'ml-64' : 'ml-0'}`}>
+
+      <main className={`flex-1 flex flex-col min-w-0 overflow-x-hidden transition-all duration-300 ${isSidebarVisible ? 'ml-64' : 'ml-0'}`}>
         <TopBar 
           title="User Settings" 
           isSidebarVisible={isSidebarVisible}
+          onToggleSidebar={toggleSidebar}
           userId={userId}
         />
         
-        <div className="user-settings-page">
+        <div className="user-settings-page w-full max-w-full overflow-x-hidden">
           <div className="user-settings-layout">
             <SettingsSidebar role={role} menuItems={menuItems} activeItemId={activeItem} onSelectItem={handleSelect} />
 

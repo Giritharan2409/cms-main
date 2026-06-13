@@ -9,8 +9,8 @@ export function AdmissionProvider({ children }) {
   const [approvedStudents, setApprovedStudents] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Sanitize data
-  const sanitizeStudent = (student) => {
+  //  Sanitize data
+  const sanitizeStudent = (student) =>{
     if (!student) return student;
     return {
       ...student,
@@ -21,34 +21,34 @@ export function AdmissionProvider({ children }) {
     };
   };
 
-  // ✅ Fetch Students
-  const fetchStudentAdmissions = async () => {
+  //  Fetch Students
+  const fetchStudentAdmissions = async () =>{
     try {
       const res = await fetch(`${API_BASE}/admissions/students`);
       if (res.ok) {
         const data = await res.json();
-        setStudentApps(data.map((item) => sanitizeStudent(item)));
+        setStudentApps(data.map((item) =>sanitizeStudent(item)));
       }
     } catch (err) {
-      console.error('❌ Error fetching students:', err);
+      console.error(' Error fetching students:', err);
     }
   };
 
-  // ✅ Fetch Faculty
-  const fetchFacultyAdmissions = async () => {
+  //  Fetch Faculty
+  const fetchFacultyAdmissions = async () =>{
     try {
       const res = await fetch(`${API_BASE}/admissions/faculty`);
       if (res.ok) {
         const data = await res.json();
-        setFacultyApps(data.map((item) => sanitizeStudent(item)));
+        setFacultyApps(data.map((item) =>sanitizeStudent(item)));
       }
     } catch (err) {
-      console.error('❌ Error fetching faculty:', err);
+      console.error(' Error fetching faculty:', err);
     }
   };
 
-  // ✅ Fetch Approved Students
-  const fetchApprovedStudents = async () => {
+  //  Fetch Approved Students
+  const fetchApprovedStudents = async () =>{
     try {
       await fetch(`${API_BASE}/admissions/purge-invalid-approved`, {
         method: 'DELETE',
@@ -59,17 +59,17 @@ export function AdmissionProvider({ children }) {
       if (res.ok) {
         const data = await res.json();
         setApprovedStudents(
-          (data.approved_students || []).map((item) => sanitizeStudent(item))
+          (data.approved_students || []).map((item) =>sanitizeStudent(item))
         );
       }
     } catch (err) {
-      console.error('❌ Error fetching approved students:', err);
+      console.error(' Error fetching approved students:', err);
     }
   };
 
-  // ✅ INITIAL LOAD
-  useEffect(() => {
-    const loadData = async () => {
+  //  INITIAL LOAD
+  useEffect(() =>{
+    const loadData = async () =>{
       setLoading(true);
       await Promise.all([
         fetchStudentAdmissions(),
@@ -82,28 +82,28 @@ export function AdmissionProvider({ children }) {
     loadData();
   }, []);
 
-  // ✅ Delete Student
-  const deleteStudentApp = async (id) => {
+  //  Delete Student
+  const deleteStudentApp = async (id) =>{
     try {
       await fetch(`${API_BASE}/admissions/${id}`, { method: 'DELETE' });
       fetchStudentAdmissions();
     } catch (err) {
-      console.error('❌ Error deleting student:', err);
+      console.error(' Error deleting student:', err);
     }
   };
 
-  // ✅ Delete Faculty
-  const deleteFacultyApp = async (id) => {
+  //  Delete Faculty
+  const deleteFacultyApp = async (id) =>{
     try {
       await fetch(`${API_BASE}/admissions/faculty/${id}`, { method: 'DELETE' });
       fetchFacultyAdmissions();
     } catch (err) {
-      console.error('❌ Error deleting faculty:', err);
+      console.error(' Error deleting faculty:', err);
     }
   };
 
-  // ✅ Update Student Status
-  const updateStudentStatus = async (id, status) => {
+  //  Update Student Status
+  const updateStudentStatus = async (id, status) =>{
     try {
       const endpoint =
         status === 'Approved'
@@ -117,7 +117,7 @@ export function AdmissionProvider({ children }) {
       }
 
       const result = await response.json();
-      console.log(`✅ Student ${id} ${status}:`, result);
+      console.log(` Student ${id} ${status}:`, result);
 
       // Refresh all data after status change
       await Promise.all([
@@ -132,13 +132,13 @@ export function AdmissionProvider({ children }) {
       }
       
     } catch (err) {
-      console.error('❌ Error updating student:', err);
+      console.error(' Error updating student:', err);
       throw err;
     }
   };
 
-  // ✅ Update Faculty Status
-  const updateFacultyStatus = async (id, status) => {
+  //  Update Faculty Status
+  const updateFacultyStatus = async (id, status) =>{
     try {
       const endpoint =
         status === 'Approved'
@@ -149,12 +149,12 @@ export function AdmissionProvider({ children }) {
 
       fetchFacultyAdmissions();
     } catch (err) {
-      console.error('❌ Error updating faculty:', err);
+      console.error(' Error updating faculty:', err);
     }
   };
 
-  // ✅ Add Faculty (NEW - important)
-  const addFacultyApp = async (facultyData) => {
+  //  Add Faculty (NEW - important)
+  const addFacultyApp = async (facultyData) =>{
     try {
       await fetch(`${API_BASE}/faculty/create`, {
         method: 'POST',
@@ -164,12 +164,12 @@ export function AdmissionProvider({ children }) {
 
       fetchFacultyAdmissions(); // refresh
     } catch (err) {
-      console.error('❌ Error adding faculty:', err);
+      console.error(' Error adding faculty:', err);
     }
   };
 
-  // ✅ Add Student (optional)
-  const addStudentApp = async (studentData) => {
+  //  Add Student (optional)
+  const addStudentApp = async (studentData) =>{
     try {
       await fetch(`${API_BASE}/admissions/create`, {
         method: 'POST',
@@ -179,7 +179,7 @@ export function AdmissionProvider({ children }) {
 
       fetchStudentAdmissions();
     } catch (err) {
-      console.error('❌ Error adding student:', err);
+      console.error(' Error adding student:', err);
     }
   };
 
@@ -197,10 +197,8 @@ export function AdmissionProvider({ children }) {
   };
 
   return (
-    <AdmissionContext.Provider value={value}>
-      {children}
-    </AdmissionContext.Provider>
-  );
+    <AdmissionContext.Provider value={value}>{children}
+    </AdmissionContext.Provider>);
 }
 
 export function useAdmission() {

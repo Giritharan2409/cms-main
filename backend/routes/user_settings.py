@@ -866,8 +866,10 @@ async def list_departments():
         depts.append(d)
     if not depts:
         defaults = [
-            {"id": 1, "name": "Computer Science", "hod": "Dr Kumar", "code": "CSE", "mappedStaff": 48},
-            {"id": 2, "name": "Mechanical", "hod": "Dr Raj", "code": "MEC", "mappedStaff": 34},
+            {"id": 1, "name": "Computer Science & Engineering", "code": "CSE", "head": "Prof. Dr. Amjad Khan", "hod": "Prof. Dr. Amjad Khan", "totalFaculty": 24, "totalStudents": 312, "courses": 45, "email": "cse@mit.edu", "phone": "+91-9876543210", "location": "Building A, Floor 3", "description": "Excellence in computer science education and research", "mappedStaff": 24},
+            {"id": 2, "name": "Electrical Engineering", "code": "EEE", "head": "Prof. K.V. Rao", "hod": "Prof. K.V. Rao", "totalFaculty": 18, "totalStudents": 256, "courses": 38, "email": "eee@mit.edu", "phone": "+91-9876543211", "location": "Building B, Floor 2", "description": "Power systems, control systems, and renewable energy focus", "mappedStaff": 18},
+            {"id": 3, "name": "Mechanical Engineering", "code": "ME", "head": "Prof. S. Natarajan", "hod": "Prof. S. Natarajan", "totalFaculty": 22, "totalStudents": 298, "courses": 42, "email": "me@mit.edu", "phone": "+91-9876543212", "location": "Building C, Floor 1", "description": "Thermal engineering, manufacturing, and design specializations", "mappedStaff": 22},
+            {"id": 4, "name": "Civil Engineering", "code": "CE", "head": "Prof. Ramesh Gupta", "hod": "Prof. Ramesh Gupta", "totalFaculty": 16, "totalStudents": 224, "courses": 35, "email": "ce@mit.edu", "phone": "+91-9876543213", "location": "Building D, Floor 2", "description": "Infrastructure, structures, and environmental engineering", "mappedStaff": 16},
         ]
         await col.insert_many(defaults)
         return defaults
@@ -884,10 +886,47 @@ async def create_department(body: dict):
     new_dept = {
         "id": max_id + 1,
         "name": body.get("name", "New Department"),
-        "hod": body.get("hod", "TBD"),
         "code": body.get("code", f"DEP-{max_id + 1}"),
-        "mappedStaff": body.get("mappedStaff", 0),
+        "head": body.get("head", body.get("hod", "TBD")),
+        "hod": body.get("hod", body.get("head", "TBD")),
+        "totalFaculty": body.get("totalFaculty", 0),
+        "totalStudents": body.get("totalStudents", 0),
+        "courses": body.get("courses", 0),
+        "email": body.get("email", ""),
+        "phone": body.get("phone", ""),
+        "location": body.get("location", ""),
+        "description": body.get("description", ""),
+        "mappedStaff": body.get("mappedStaff", body.get("totalFaculty", 0)),
     }
     await col.insert_one(new_dept)
     new_dept.pop("_id", None)
     return new_dept
+
+
+@router.put("/departments/{dept_id}")
+async def update_department(dept_id: int, body: dict):
+    db = get_db()
+    col = db["system_departments"]
+    # Remove fields that shouldn't be overwritten
+    body.pop("_id", None)
+    body.pop("id", None)
+    result = await col.find_one_and_update(
+        {"id": dept_id},
+        {"$set": body},
+        return_document=True
+    )
+    if not result:
+        raise HTTPException(status_code=404, detail="Department not found")
+    result["_id"] = str(result["_id"])
+    return result
+
+
+@router.delete("/departments/{dept_id}")
+async def delete_department(dept_id: int):
+    db = get_db()
+    col = db["system_departments"]
+    result = await col.delete_one({"id": dept_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Department not found")
+    return {"message": "Department deleted"}
+

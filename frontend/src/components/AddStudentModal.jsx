@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { getUserSession, updateUserData } from '../auth/sessionController';
 
 export default function AddStudentModal({ isOpen, onClose, onSuccess, editStudent }) {
   const [step, setStep] = useState(1);
@@ -185,6 +186,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
           rollNumber: formData.rollNumber || formData.id || formData.student_id || studentId,
           guardian: formData.guardianName || formData.guardian || '',
           semester: parseInt(formData.semester) || 1,
+          cgpa: formData.cgpa ? parseFloat(formData.cgpa) : null,
           enrollDate: formData.enrollDate ? new Date(formData.enrollDate).toISOString() : null,
           dob: formData.dob ? new Date(formData.dob).toISOString() : null,
           // Convert docs to simple documents list for now if the backend expects list of dicts
@@ -210,6 +212,15 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
         const savedStudent = await res.json();
         console.log('Success:', savedStudent);
         
+        const session = getUserSession();
+        if (session && (session.userId === studentId || session.userId === studentId.toString())) {
+          updateUserData({
+            name: savedStudent.name,
+            email: savedStudent.email,
+            avatar: savedStudent.avatar
+          });
+        }
+
         if (onSuccess) onSuccess(savedStudent);
         localStorage.removeItem('add_student_draft');
         alert(editStudent ? 'Student details updated successfully!' : 'Student enrolled successfully!');
@@ -294,6 +305,22 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
                     <div className="absolute inset-0 bg-green-700/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                       <span className="text-white text-xs font-bold">CHANGE PHOTO</span>
                     </div>
+                    {avatarPreview && !avatarPreview.startsWith('https://ui-avatars.com') && (
+                      <button 
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm('Are you sure you want to remove the profile photo?')) {
+                            setAvatarPreview(null);
+                            setFormData(prev => ({ ...prev, avatar: null }));
+                          }
+                        }}
+                        className="absolute top-1.5 right-1.5 z-20 p-1 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-md opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center border border-white/10"
+                        title="Remove profile photo"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">delete</span>
+                      </button>
+                    )}
                   </div>
                   <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'avatar')} />
                 </div>
@@ -380,6 +407,10 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Enrollment Date</label>
                   <input type="date" name="enrollDate" value={formData.enrollDate} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-green-600 outline-none text-slate-700" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">CGPA</label>
+                  <input type="number" step="0.01" min="0" max="10" name="cgpa" value={formData.cgpa || ''} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-green-600 outline-none text-slate-700" placeholder="e.g. 8.5" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Admission Type</label>

@@ -69,7 +69,7 @@ export default function AcademicSidebar({ isSidebarVisible = true, onToggleSideb
 
   function getRoute(item) {
     if (item === 'Fees') {
-      return role === 'admin' ? '/admin-fees' : '/fees'
+      return (role === 'admin' || role === 'finance') ? '/admin-fees' : '/fees'
     }
     if (item === 'Invoices') {
       if (role === 'admin') return '/admin-invoices'
@@ -133,10 +133,10 @@ export default function AcademicSidebar({ isSidebarVisible = true, onToggleSideb
         <button
           onClick={onToggleSidebar}
           style={{ color: 'rgba(255, 255, 255, 0.8)', borderColor: 'rgba(255, 255, 255, 0.1)', backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
-          className="p-1 rounded-md border transition-colors flex items-center justify-center flex-shrink-0 hover:bg-white/10"
-          title="Toggle sidebar"
+          className="md:hidden p-1 rounded-md border transition-colors flex items-center justify-center flex-shrink-0 hover:bg-white/10"
+          title="Close sidebar"
         >
-          <span className="material-symbols-outlined text-lg font-semibold">menu</span>
+          <span className="material-symbols-outlined text-lg font-semibold">close</span>
         </button>
       </div>
 

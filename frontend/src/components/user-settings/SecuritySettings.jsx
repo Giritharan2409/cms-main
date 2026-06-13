@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { userSettingsApi } from '../../api/userSettingsApi';
 import { useSettingsContext } from '../../context/SettingsContext';
 import { destroyUserSession } from '../../auth/sessionController';
-import { SaveToast, SectionError, SectionLoader } from './SettingsCommon';
+import { SettingsCard, SettingsError, SettingsLoader, SettingsToast } from '../settings/SettingsPanelCommon';
 
 export default function SecuritySettings({ role, userId }) {
   const navigate = useNavigate();
@@ -11,14 +11,13 @@ export default function SecuritySettings({ role, userId }) {
   const [sessions, setSessions] = useState([]);
   const [loginHistory, setLoginHistory] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [runningAction, setRunningAction] = useState(false);
+  const [running, setRunning] = useState(false);
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
 
   async function load() {
     setLoading(true);
     setError('');
-
     try {
       const [sessionData, historyData] = await Promise.all([
         userSettingsApi.getSessions(role, userId),
@@ -26,8 +25,8 @@ export default function SecuritySettings({ role, userId }) {
       ]);
       setSessions(sessionData);
       setLoginHistory(historyData);
-    } catch (loadError) {
-      setError(loadError.message);
+    } catch (e) {
+      setError(e.message);
     } finally {
       setLoading(false);
     }
@@ -36,95 +35,89 @@ export default function SecuritySettings({ role, userId }) {
   useEffect(() => {
     markSectionDirty('security', false);
     load();
-  }, [markSectionDirty, role, userId]);
-
-  if (loading) {
-    return <SectionLoader label="Loading security data..." />;
-  }
+  }, [markSectionDirty, role, userId]); // eslint-disable-line
 
   async function handleLogoutAll() {
-    setRunningAction(true);
+    setRunning(true);
     setError('');
-
     try {
       const response = await userSettingsApi.logoutAllDevices(role, userId);
       setSessions(response.data || []);
-      setToast('All active sessions were logged out.');
-      // Clear local session and navigate to login after successful logout
-      setTimeout(() => {
-        destroyUserSession();
-        navigate('/', { replace: true });
-      }, 500);
-    } catch (actionError) {
-      setError(actionError.message);
+      setToast('All active sessions logged out. Redirecting…');
+      setTimeout(() => { destroyUserSession(); navigate('/', { replace: true }); }, 1500);
+    } catch (e) {
+      setError(e.message);
     } finally {
-      setRunningAction(false);
+      setRunning(false);
     }
   }
 
+  if (loading) return <SettingsLoader label="Loading security data…" />;
+
   return (
-    <section className="user-settings-section">
-      <header>
-        <h3>Security</h3>
-        <p>Review active sessions, login history, and secure account activity.</p>
-      </header>
+    <div className="flex flex-col gap-5">
+      <SettingsError message={error} />
 
-      <SectionError message={error} />
+      {/* Active Sessions */}
+      <SettingsCard title="Active Sessions" description="Devices currently logged in to your account.">
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-sm text-slate-500">{sessions.length} session{sessions.length !== 1 ? 's' : ''} active</span>
+          <button onClick={load} className="text-xs font-semibold text-[#276221] hover:underline flex items-center gap-1">
+            <span className="material-symbols-outlined text-[16px]">refresh</span> Refresh
+          </button>
+        </div>
 
-      <div className="user-settings-security-grid">
-        <article className="user-settings-panel">
-          <div className="user-settings-panel-head">
-            <h4>Active Sessions</h4>
-            <button type="button" onClick={load} className="user-settings-inline-btn">
-              Refresh
-            </button>
-          </div>
+        <div className="space-y-2">
+          {sessions.length === 0 && (
+            <p className="text-sm text-slate-400 py-4 text-center">No active sessions found.</p>
+          )}
+          {sessions.map((s) => (
+            <div key={s.id} className="flex items-center justify-between p-3.5 rounded-xl border border-slate-100 bg-slate-50 hover:bg-slate-100 transition-colors">
+              <div>
+                <p className="text-sm font-semibold text-slate-800">{s.device}</p>
+                <p className="text-xs text-slate-500 mt-0.5">{s.location} &middot; Last seen: {new Date(s.lastSeen).toLocaleString()}</p>
+              </div>
+              <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${s.active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>
+                {s.active ? 'Active' : 'Logged Out'}
+              </span>
+            </div>
+          ))}
+        </div>
 
-          <ul className="user-settings-list">
-            {sessions.map((session) => (
-              <li key={session.id}>
-                <div>
-                  <strong>{session.device}</strong>
-                  <p>
-                    {session.location} | Last Seen: {new Date(session.lastSeen).toLocaleString()}
-                  </p>
-                </div>
-                <span className={`user-settings-badge${session.active ? ' active' : ''}`}>
-                  {session.active ? 'Active' : 'Logged Out'}
-                </span>
-              </li>
-            ))}
-          </ul>
-
+        <div className="mt-5 pt-5 border-t border-slate-100">
           <button
             type="button"
-            className="user-settings-btn user-settings-btn-danger"
             onClick={handleLogoutAll}
-            disabled={runningAction}
+            disabled={running}
+            className="inline-flex items-center gap-2 px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold rounded-lg transition-all shadow-sm active:scale-95 disabled:opacity-60"
           >
-            {runningAction ? 'Logging Out...' : 'Logout All Devices'}
+            <span className="material-symbols-outlined text-[18px]">logout</span>
+            {running ? 'Logging out…' : 'Logout All Devices'}
           </button>
-        </article>
+        </div>
+      </SettingsCard>
 
-        <article className="user-settings-panel">
-          <h4>Login History</h4>
-          <ul className="user-settings-list">
-            {loginHistory.map((entry, index) => (
-              <li key={`${entry.timestamp}-${index}`}>
-                <div>
-                  <strong>{new Date(entry.timestamp).toLocaleString()}</strong>
-                  <p>IP: {entry.ip}</p>
-                </div>
-                <span className={`user-settings-badge ${entry.status === 'success' ? 'active' : 'failed'}`}>
-                  {entry.status}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </article>
-      </div>
+      {/* Login History */}
+      <SettingsCard title="Login History" description="Recent sign-in events for your account.">
+        <div className="space-y-2">
+          {loginHistory.length === 0 && (
+            <p className="text-sm text-slate-400 py-4 text-center">No login history found.</p>
+          )}
+          {loginHistory.map((entry, i) => (
+            <div key={`${entry.timestamp}-${i}`} className="flex items-center justify-between p-3.5 rounded-xl border border-slate-100 bg-slate-50">
+              <div>
+                <p className="text-sm font-semibold text-slate-800">{new Date(entry.timestamp).toLocaleString()}</p>
+                <p className="text-xs text-slate-500 mt-0.5">IP: {entry.ip}</p>
+              </div>
+              <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${entry.status === 'success' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-600'}`}>
+                {entry.status}
+              </span>
+            </div>
+          ))}
+        </div>
+      </SettingsCard>
 
-      <SaveToast message={toast} onClear={() => setToast('')} />
-    </section>
+      <SettingsToast message={toast} onClear={() => setToast('')} />
+    </div>
   );
 }

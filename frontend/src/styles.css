@@ -32,6 +32,8 @@ html,
 body,
 #root {
   min-height: 100%;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 body {
@@ -40,6 +42,7 @@ body {
   color: #1f2937;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 button,
@@ -691,6 +694,8 @@ a {
   flex: 1;
   padding: 32px;
   min-height: 100vh;
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 .topbar {
@@ -1141,36 +1146,78 @@ a {
 
 @media (max-width: 768px) {
   .login-page {
-    padding: 16px;
+    padding: 12px;
   }
 
   .login-shell {
     min-height: auto;
-    border-radius: 22px;
+    border-radius: 18px;
   }
 
   .login-showcase {
-    padding: 28px 24px;
+    padding: 24px 20px;
+  }
+
+  .showcase-badge {
+    font-size: 11px;
+    padding: 6px 12px;
+  }
+
+  .showcase-brand-card h1 {
+    font-size: 28px;
+  }
+
+  .showcase-brand-card p {
+    font-size: 13px;
   }
 
   .showcase-copy h2 {
-    font-size: 32px;
+    font-size: 28px;
+    letter-spacing: -1px;
   }
 
   .showcase-copy p {
-    font-size: 15px;
+    font-size: 14px;
+    line-height: 1.6;
   }
 
   .showcase-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .showcase-card {
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  .showcase-card h3 {
+    font-size: 15px;
+  }
+
+  .showcase-card p {
+    font-size: 13px;
   }
 
   .login-container {
-    padding: 32px 22px;
+    padding: 28px 18px;
+  }
+
+  .login-brand h1 {
+    font-size: 20px;
   }
 
   .role-switcher {
     grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 6px;
+    border-radius: 14px;
+  }
+
+  .role-switch-btn {
+    height: 42px;
+    font-size: 13px;
+    border-radius: 10px;
   }
 
   .brand-mark-row {
@@ -1180,6 +1227,20 @@ a {
   .login-links {
     flex-wrap: wrap;
     gap: 12px 18px;
+  }
+
+  .form-group input[type='text'],
+  .form-group input[type='password'],
+  .form-group select {
+    height: 48px;
+    border-radius: 12px;
+    font-size: 14px;
+  }
+
+  .btn-login {
+    height: 48px;
+    font-size: 15px;
+    border-radius: 12px;
   }
 
   .sidebar {
@@ -1194,21 +1255,29 @@ a {
   .main-content {
     margin-left: 0;
     padding: 16px;
+    min-width: 0;
+    overflow-x: hidden;
   }
 
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
   }
 
   .profile-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
+    padding: 16px;
   }
 
   .profile-right {
     width: 100%;
     flex-wrap: wrap;
+  }
+
+  .student-name {
+    font-size: 18px;
   }
 
   .mobile-menu-btn {
@@ -1217,6 +1286,141 @@ a {
 
   .sidebar-desktop-toggle {
     display: none;
+  }
+
+  /* Table responsiveness */
+  .settings-table-wrap,
+  .overflow-x-auto {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .settings-table,
+  .overflow-x-auto > table {
+    min-width: 750px !important;
+  }
+
+  /* Global responsive data tables */
+  .bg-white.rounded-xl.border.border-slate-200.overflow-hidden {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .bg-white.rounded-xl.border.border-slate-200.overflow-hidden > table {
+    min-width: 750px !important;
+  }
+
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .topbar-left h2 {
+    font-size: 20px;
+  }
+
+  /* Bottom grid responsive */
+  .bottom-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-title {
+    font-size: 16px;
+  }
+
+  .stat-value {
+    font-size: 24px;
+  }
+}
+
+/* Phone-specific (very small screens) */
+@media (max-width: 480px) {
+  .login-page {
+    padding: 8px;
+  }
+
+  .login-shell {
+    border-radius: 14px;
+  }
+
+  .login-showcase {
+    padding: 20px 16px;
+  }
+
+  .showcase-copy h2 {
+    font-size: 24px;
+  }
+
+  .showcase-brand-card {
+    gap: 12px;
+  }
+
+  .showcase-brand-card h1 {
+    font-size: 24px;
+  }
+
+  .login-container {
+    padding: 24px 16px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .stat-card {
+    padding: 16px;
+  }
+
+  .stat-value {
+    font-size: 22px;
+  }
+
+  .stat-label {
+    font-size: 12px;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .content-card {
+    padding: 14px;
+    border-radius: 10px;
+  }
+
+  .profile-header {
+    padding: 12px;
+    border-radius: 10px;
+  }
+
+  .profile-left {
+    gap: 12px;
+  }
+
+  .profile-meta {
+    gap: 12px;
+  }
+
+  .meta-item {
+    font-size: 12px;
+  }
+
+  .avatar-initials {
+    width: 44px;
+    height: 44px;
+    font-size: 16px;
+  }
+
+  .student-name {
+    font-size: 16px;
+  }
+
+  .notice-item {
+    padding: 10px;
   }
 }
 

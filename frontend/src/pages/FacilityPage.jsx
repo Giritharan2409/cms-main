@@ -8,6 +8,7 @@ import {
   fetchFacilityBookings,
   createFacilityBooking,
   createFacilityRecord,
+  updateFacilityRecord,
 } from '../api/facilityApi'
 
 const statusStyle = {
@@ -36,6 +37,9 @@ export default function FacilityPage({ noLayout = false }) {
   const [addFacilityOpen, setAddFacilityOpen] = useState(false)
   const [addFacilityForm, setAddFacilityForm] = useState({ name: '', type: '', capacity: 30, status: 'Available', amenities: '' })
   const [addFacilitySuccess, setAddFacilitySuccess] = useState(false)
+  const [editingFacility, setEditingFacility] = useState(null)
+  const [newStatus, setNewStatus] = useState('')
+  const [newCapacity, setNewCapacity] = useState(0)
   const filterRef = useRef(null)
 
   async function loadFacilitiesData({ silent = false } = {}) {
@@ -162,6 +166,30 @@ export default function FacilityPage({ noLayout = false }) {
     }
   }
 
+  async function handleUpdateStatus(e) {
+    if (e) e.preventDefault()
+    if (!editingFacility) return
+    setApiNotice('')
+    try {
+      const facilityId = editingFacility.id || editingFacility._id
+      const payload = {
+        name: editingFacility.name,
+        type: editingFacility.type,
+        capacity: parseInt(newCapacity),
+        status: newStatus,
+        amenities: editingFacility.amenities || []
+      }
+
+      const updated = await updateFacilityRecord(facilityId, payload)
+      setFacilities(prev => prev.map(f => (f.id || f._id) === facilityId ? updated : f))
+      setApiNotice('Facility status and capacity updated successfully.')
+      setEditingFacility(null)
+    } catch (err) {
+      console.error('Failed to update facility:', err)
+      setApiNotice(err?.message || 'Failed to update facility status and capacity.')
+    }
+  }
+
   const inner = (
     <>
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
@@ -279,13 +307,35 @@ export default function FacilityPage({ noLayout = false }) {
           <div className="col-span-full text-center text-slate-400 text-sm py-10">No facilities found</div>
         )}
         {!loading && filtered.map((f, i) => (
-          <div key={f.name} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col gap-3 animate-fadeIn" style={{ animationDelay: `${i * 50}ms` }}>
+          <div 
+            key={f.name} 
+            onClick={() => {
+              if (role === 'admin' || role === 'faculty') {
+                setEditingFacility(f)
+                setNewStatus(f.status || 'Available')
+                setNewCapacity(f.capacity || 0)
+              }
+            }}
+            className={`bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col gap-3 animate-fadeIn group relative ${
+              (role === 'admin' || role === 'faculty') 
+                ? 'cursor-pointer hover:border-green-500 hover:shadow-md transition-all duration-200' 
+                : ''
+            }`}
+            style={{ animationDelay: `${i * 50}ms` }}
+          >
             {(() => {
               const displayStatus = displayStatusByRoom[f.name] || f.status || 'Available'
               return (
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm font-bold text-slate-900">{f.name}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-bold text-slate-900">{f.name}</p>
+                  {(role === 'admin' || role === 'faculty') && (
+                    <span className="material-symbols-outlined text-[16px] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                      edit
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-slate-500">{f.type}</p>
               </div>
               <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${statusStyle[displayStatus]}`}>{displayStatus}</span>
@@ -536,6 +586,86 @@ export default function FacilityPage({ noLayout = false }) {
                 </form>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Edit Facility Status Modal */}
+      {(role === 'admin' || role === 'faculty') && editingFacility && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm" onClick={() => setEditingFacility(null)}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="p-6 border-b border-slate-200 flex items-center justify-between sticky top-0 bg-white">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-600/10 rounded-lg">
+                  <span className="material-symbols-outlined text-green-600">edit</span>
+                </div>
+                <h3 className="text-xl font-bold text-slate-900">Edit Facility</h3>
+              </div>
+              <button onClick={() => setEditingFacility(null)} className="p-1 hover:bg-slate-100 rounded-full transition-colors">
+                <span className="material-symbols-outlined text-slate-400">close</span>
+              </button>
+            </div>
+            <form onSubmit={handleUpdateStatus} className="p-6 space-y-5">
+              <div>
+                <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Facility Name</p>
+                <p className="text-lg font-bold text-slate-900 leading-none">{editingFacility.name}</p>
+                <p className="text-xs text-slate-500 mt-1">{editingFacility.type}</p>
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-slate-700">Capacity</label>
+                <input
+                  type="number"
+                  min="1"
+                  required
+                  value={newCapacity}
+                  onChange={e => setNewCapacity(parseInt(e.target.value) || 1)}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-green-600/20 focus:border-green-600 outline-none transition-colors text-sm text-slate-700 bg-white font-medium"
+                />
+              </div>
+              <div className="flex flex-col gap-2.5">
+                <label className="text-sm font-semibold text-slate-700">Availability Status</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {['Available', 'In Use', 'Maintenance'].map((status) => {
+                    const isSelected = newStatus === status;
+                    let activeClass = '';
+                    if (status === 'Available') activeClass = isSelected ? 'bg-emerald-50 border-emerald-500 text-emerald-700 font-semibold' : 'hover:bg-slate-50';
+                    if (status === 'In Use') activeClass = isSelected ? 'bg-green-50 border-green-600 text-green-800 font-semibold' : 'hover:bg-slate-50';
+                    if (status === 'Maintenance') activeClass = isSelected ? 'bg-rose-50 border-rose-500 text-rose-700 font-semibold' : 'hover:bg-slate-50';
+                    
+                    return (
+                      <button
+                        key={status}
+                        type="button"
+                        onClick={() => setNewStatus(status)}
+                        className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 text-xs transition-all duration-200 cursor-pointer ${
+                          isSelected ? 'shadow-sm scale-[1.02]' : 'border-slate-200 text-slate-600'
+                        } ${activeClass}`}
+                      >
+                        <span className={`w-2 h-2 rounded-full mb-1.5 ${
+                          status === 'Available' ? 'bg-green-500' : status === 'In Use' ? 'bg-green-700' : 'bg-red-500'
+                        }`} />
+                        {status}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="flex items-center gap-3 pt-4 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setEditingFacility(null)}
+                  className="flex-1 px-4 py-2.5 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition-colors"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

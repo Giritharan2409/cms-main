@@ -1,6 +1,6 @@
-import { getUserSession, getUserData } from '../auth/sessionController'
+import { getUserSession, getUserData, updateUserData } from '../auth/sessionController'
 import { cmsRoles } from '../data/roleConfig'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ProfileDropdown from './ProfileDropdown'
 import NotificationBell from './NotificationBell'
@@ -9,6 +9,8 @@ import NotificationDropdown from './NotificationDropdown'
 export default function TopBar({ 
   title, 
   isSidebarVisible = true,
+  isMobile = false,
+  onToggleSidebar,
   userId = 'N/A',
   onProfilePrimaryAction,
   onProfileSecondaryAction 
@@ -16,10 +18,38 @@ export default function TopBar({
   const [globalSearch, setGlobalSearch] = useState('')
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isNotificationOpen, setIsNotificationOpen] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState(null)
   const navigate = useNavigate()
   const session = getUserSession()
   const dynamicUser = getUserData()
   const role = session?.role || 'student'
+
+  useEffect(() => {
+    const loadAvatar = () => {
+      const userData = getUserData()
+      if (userData && userData.avatar) {
+        setAvatarUrl(userData.avatar)
+      } else if (session?.userId && role === 'student') {
+        fetch(`/api/students/${encodeURIComponent(session.userId)}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data && data.avatar) {
+              setAvatarUrl(data.avatar)
+              updateUserData({ avatar: data.avatar })
+            }
+          })
+          .catch(err => console.error("Error fetching user avatar:", err))
+      } else {
+        setAvatarUrl(null)
+      }
+    }
+
+    loadAvatar()
+    window.addEventListener('cms-auth-change', loadAvatar)
+    return () => {
+      window.removeEventListener('cms-auth-change', loadAvatar)
+    }
+  }, [session?.userId, role])
   
   // Use dynamic data if available, otherwise fall back to role config
   const user = dynamicUser ? {
@@ -31,11 +61,26 @@ export default function TopBar({
   } : (cmsRoles[role] || cmsRoles.student)
 
   return (
-    <header className={`h-20 bg-white border-b border-slate-100 flex items-center justify-between sticky top-0 z-10 backdrop-blur-md bg-white/80 transition-all duration-300 ${isSidebarVisible ? 'px-10' : 'pl-24 pr-10'}`}>
-      <div className="flex items-center gap-4 flex-1">
-        <div>
-          <h2 className="text-[20px] font-bold text-[#276221] tracking-tight">MIT Connect</h2>
-          <p className="text-xs text-slate-500">{title || 'Dashboard'}</p>
+    <header className={`h-16 md:h-20 bg-white border-b border-slate-100 flex items-center justify-between sticky top-0 z-10 backdrop-blur-md bg-white/80 transition-all duration-300 px-4 md:px-6`}>
+      <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
+        <button
+          onClick={onToggleSidebar}
+          className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 active:scale-95 transition-all flex items-center justify-center flex-shrink-0 cursor-pointer"
+          title={isSidebarVisible ? "Collapse sidebar" : "Expand sidebar"}
+        >
+          <span className="material-symbols-outlined text-[22px] md:text-[24px] font-medium">
+            {isSidebarVisible ? 'menu_open' : 'menu'}
+          </span>
+        </button>
+        <div className="min-w-0">
+          {(!isSidebarVisible || isMobile) && (
+            <p className="text-[10px] md:text-xs font-semibold text-[#276221] tracking-wider uppercase leading-none mb-1">
+              MIT Connect
+            </p>
+          )}
+          <h2 className="text-base md:text-[20px] font-bold text-slate-800 tracking-tight truncate leading-tight">
+            {title || 'Dashboard'}
+          </h2>
         </div>
       </div>
       <div className="relative hidden md:flex items-center gap-2">
@@ -56,8 +101,8 @@ export default function TopBar({
           </button>
         )}
       </div>
-      <div className="flex items-center gap-6">
-        <div className="flex items-center gap-2 relative">
+      <div className="flex items-center gap-2 md:gap-6">
+        <div className="flex items-center gap-1 md:gap-2 relative">
           <NotificationBell 
             role={role}
             onBellClick={() => setIsNotificationOpen(!isNotificationOpen)}
@@ -70,28 +115,28 @@ export default function TopBar({
             />
           )}
           <button
-            className="p-2.5 text-slate-400 hover:bg-slate-50 rounded-xl transition-all"
+            className="p-2 md:p-2.5 text-slate-400 hover:bg-slate-50 rounded-xl transition-all"
             onClick={() => navigate('/settings')}
             aria-label="Open settings"
             title="Settings"
           >
-            <span className="material-symbols-outlined text-[24px]">settings</span>
+            <span className="material-symbols-outlined text-[20px] md:text-[24px]">settings</span>
           </button>
         </div>
-        <div className="flex items-center gap-4 border-l border-slate-100 pl-6 cursor-pointer group relative">
+        <div className="flex items-center gap-2 md:gap-4 border-l border-slate-100 pl-2 md:pl-6 cursor-pointer group relative">
           <div className="text-right hidden sm:block">
-            <p className="text-sm font-bold text-[#1e293b]">{user.name}</p>
-            <p className="text-[11px] font-bold text-[#64748b] uppercase tracking-wider">{user.label}</p>
+            <p className="text-sm font-bold text-[#1e293b] truncate max-w-[120px] md:max-w-none">{user.name}</p>
+            <p className="text-[11px] font-bold text-[#64748b] uppercase tracking-wider truncate max-w-[120px] md:max-w-none">{user.label}</p>
           </div>
           <button
             type="button"
             onClick={() => setIsProfileOpen(!isProfileOpen)}
-            className="w-11 h-11 rounded-xl bg-slate-100 overflow-hidden border-2 border-white shadow-sm transition-transform group-hover:scale-105 cursor-pointer"
+            className="w-9 h-9 md:w-11 md:h-11 rounded-xl bg-slate-100 overflow-hidden border-2 border-white shadow-sm transition-transform group-hover:scale-105 cursor-pointer flex-shrink-0"
             aria-label="Open profile dropdown"
             title="Open profile"
           >
             <img 
-              src="https://img.freepik.com/free-photo/young-bearded-man-with-striped-shirt_273609-5677.jpg" 
+              src={avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=276221&color=fff&size=128`} 
               alt="Profile" 
               className="w-full h-full object-cover"
             />
@@ -99,8 +144,8 @@ export default function TopBar({
           <ProfileDropdown
             isOpen={isProfileOpen}
             onClose={() => setIsProfileOpen(false)}
-            user={user}
-            userId={userId}
+            user={{ ...user, avatar: avatarUrl }}
+            userId={session?.userId || userId}
             role={role}
             onPrimaryAction={onProfilePrimaryAction}
             onSecondaryAction={onProfileSecondaryAction}

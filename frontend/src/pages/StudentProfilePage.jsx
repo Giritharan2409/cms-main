@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import AddStudentModal from '../components/AddStudentModal';
+import { getUserSession, updateUserData } from '../auth/sessionController';
 import { 
   ArrowLeft, User, BarChart2,
-  Mail, Phone, MapPin, Calendar, Users, FileText
+  Mail, Phone, MapPin, Calendar, Users
 } from 'lucide-react';
 import '../styles.css';
 
@@ -12,8 +13,7 @@ const API_BASE_URL = '/api';
 const profileTabs = [
   { id: 'overview', label: 'Overview', icon: User },
   { id: 'academics', label: 'Academics', icon: BarChart2 },
-  { id: 'fees', label: 'Fees', icon: Calendar },
-  { id: 'documents', label: 'Documents', icon: FileText }
+  { id: 'fees', label: 'Fees', icon: Calendar }
 ];
 
 export default function StudentProfilePage() {
@@ -56,6 +56,67 @@ export default function StudentProfilePage() {
       console.error(error);
       setStudent(null);
       setError(error.message || 'Failed to fetch student details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAvatarUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64Data = reader.result;
+      try {
+        setLoading(true);
+        const response = await fetch(`${API_BASE_URL}/students/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ avatar: base64Data })
+        });
+        if (!response.ok) {
+          throw new Error('Failed to update profile photo');
+        }
+        await fetchStudentDetails();
+        const session = getUserSession();
+        if (session && (session.userId === id || session.userId === id.toString())) {
+          updateUserData({ avatar: base64Data });
+        }
+        alert('Profile photo updated successfully!');
+      } catch (err) {
+        console.error(err);
+        alert(err.message || 'Failed to upload photo');
+      } finally {
+        setLoading(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveAvatar = async (e) => {
+    e.stopPropagation();
+    if (!confirm('Are you sure you want to remove your profile photo?')) return;
+
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/students/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar: null })
+      });
+      if (!response.ok) {
+        throw new Error('Failed to remove profile photo');
+      }
+      await fetchStudentDetails();
+      const session = getUserSession();
+      if (session && (session.userId === id || session.userId === id.toString())) {
+        updateUserData({ avatar: null });
+      }
+      alert('Profile photo removed successfully!');
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'Failed to remove photo');
     } finally {
       setLoading(false);
     }
@@ -135,13 +196,39 @@ export default function StudentProfilePage() {
 
           <div className="relative flex flex-col xl:flex-row xl:items-center justify-between gap-10">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-8">
-              <div className="w-28 h-28 rounded-xl bg-gradient-to-br from-[#276221] to-[#60a5fa] p-1 shadow-xl">
+              <div 
+                className="w-28 h-28 rounded-xl bg-gradient-to-br from-[#276221] to-[#60a5fa] p-1 shadow-xl cursor-pointer relative group overflow-hidden"
+              >
                 <img
                   src={student.avatar || `https://ui-avatars.com/api/?name=${student.name}&background=1162d4&color=fff&size=128`}
                   alt={student.name}
                   className="w-full h-full rounded-lg object-cover"
+                  onClick={() => document.getElementById('student-profile-photo-upload').click()}
                 />
+                <div 
+                  onClick={() => document.getElementById('student-profile-photo-upload').click()}
+                  className="absolute inset-0 bg-[#276221]/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-200 rounded-lg"
+                >
+                  <span className="text-white text-[10px] font-bold text-center tracking-wider px-1">UPLOAD PHOTO</span>
+                </div>
+                {student.avatar && !student.avatar.startsWith('https://ui-avatars.com') && (
+                  <button 
+                    type="button"
+                    onClick={handleRemoveAvatar}
+                    className="absolute top-1.5 right-1.5 z-20 p-1 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-md opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center border border-white/10"
+                    title="Remove profile photo"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">delete</span>
+                  </button>
+                )}
               </div>
+              <input 
+                id="student-profile-photo-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarUpload}
+              />
 
               <div className="text-center sm:text-left">
                 <div className="flex flex-col sm:flex-row items-center gap-3 mb-3">
@@ -366,44 +453,6 @@ export default function StudentProfilePage() {
               </div>
             </div>
           )}
-
-          {activeTab === 'documents' && (
-            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-              <div className="px-8 py-6 border-b border-slate-100">
-                <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">Uploaded Documents</h3>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead className="bg-slate-50 text-slate-500 text-[10px] font-semibold uppercase tracking-wider border-b border-slate-200">
-                    <tr>
-                      <th className="px-6 py-4">Document Name</th>
-                      <th className="px-6 py-4">Type</th>
-                      <th className="px-6 py-4">Upload Date</th>
-                      <th className="px-6 py-4">Size</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {student.documents && student.documents.length > 0 ? (
-                      student.documents.map((doc, i) => (
-                        <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="px-6 py-4 text-sm font-semibold text-slate-800">{doc.name}</td>
-                          <td className="px-6 py-4 text-sm text-slate-600">{doc.type}</td>
-                          <td className="px-6 py-4 text-sm text-slate-600">{doc.uploadDate}</td>
-                          <td className="px-6 py-4 text-sm text-slate-600">{doc.size}</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={4} className="px-6 py-8 text-center text-slate-500">
-                          No documents uploaded yet
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -411,7 +460,7 @@ export default function StudentProfilePage() {
         <AddStudentModal
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
-          student={student}
+          editStudent={student}
           onSuccess={() => {
             fetchStudentDetails();
             setIsEditModalOpen(false);

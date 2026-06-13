@@ -113,6 +113,7 @@ async def _find_student(db, user_id: str, password: str) -> dict | None:
         "name": user.get("name", ""),
         "email": user.get("email", ""),
         "department": user.get("department", user.get("department_id", "")),
+        "avatar": user.get("avatar"),
         "role": "student",
     }
 

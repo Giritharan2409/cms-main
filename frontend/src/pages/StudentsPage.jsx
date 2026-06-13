@@ -17,7 +17,7 @@ export default function StudentsPage() {
   const [editingStudent, setEditingStudent] = useState(null)
   const itemsPerPage = 8
 
-  const fetchStudents = async () => {
+  const fetchStudents = async () =>{
     try {
       setLoading(true)
       const res = await fetch('/api/students')
@@ -33,26 +33,26 @@ export default function StudentsPage() {
     }
   }
 
-  useEffect(() => {
+  useEffect(() =>{
     fetchStudents()
     
     // Listen for student approval events from AdmissionContext
-    const handleStudentApproved = (event) => {
-      console.log('✅ Student approved event received:', event.detail);
+    const handleStudentApproved = (event) =>{
+      console.log(' Student approved event received:', event.detail);
       // Refresh students list after a short delay to ensure DB is updated
-      setTimeout(() => {
+      setTimeout(() =>{
         fetchStudents();
       }, 500);
     };
     
     window.addEventListener('studentApproved', handleStudentApproved);
     
-    return () => {
+    return () =>{
       window.removeEventListener('studentApproved', handleStudentApproved);
     };
   }, [])
 
-  const handleDelete = async (student) => {
+  const handleDelete = async (student) =>{
     if (window.confirm(`Are you sure you want to delete ${student.name} (Roll: ${student.rollNumber})? This action cannot be undone.`)) {
       try {
         const res = await fetch(`/api/students/${encodeURIComponent(student.rollNumber)}`, {
@@ -68,30 +68,30 @@ export default function StudentsPage() {
     }
   }
 
-  const handleEdit = (student) => {
+  const handleEdit = (student) =>{
     setEditingStudent(student)
     setIsModalOpen(true)
   }
 
-  const handleModalClose = () => {
+  const handleModalClose = () =>{
     setIsModalOpen(false)
     setEditingStudent(null)
   }
 
-  const handleSuccess = () => {
+  const handleSuccess = () =>{
     fetchStudents()
     handleModalClose()
     setCurrentPage(1)
   }
 
-  const getStats = () => ({
+  const getStats = () =>({
     total: studentsList.length,
-    active: studentsList.filter(s => s.status === 'active' || s.status === 'Active').length
+    active: studentsList.filter(s =>s.status === 'active' || s.status === 'Active').length
   })
 
   const stats = getStats()
 
-  const filtered = studentsList.filter(s => {
+  const filtered = studentsList.filter(s =>{
     // Apply department/status filters if set
     if (departmentFilter) {
       const dep = (s.department || '').toLowerCase()
@@ -110,7 +110,7 @@ export default function StudentsPage() {
     return matchesSearch
   })
 
-  const handleFilterClick = () => {
+  const handleFilterClick = () =>{
     const dep = window.prompt('Filter by department (leave empty to clear):', departmentFilter || '')
     if (dep === null) return // cancelled
     setDepartmentFilter(dep || '')
@@ -120,10 +120,10 @@ export default function StudentsPage() {
     setCurrentPage(1)
   }
 
-  const handleExportClick = async () => {
+  const handleExportClick = async () =>{
     // Ask which format
     const fmt = (window.prompt('Export format: csv or pdf (default csv)', 'csv') || 'csv').toLowerCase()
-    const rows = filtered.map(s => ({
+    const rows = filtered.map(s =>({
       Name: s.name || s.fullName || '',
       Roll: s.rollNumber || s.id || '',
       Email: s.email || '',
@@ -138,7 +138,7 @@ export default function StudentsPage() {
         const autoTableModule = await import('jspdf-autotable')
         const doc = new jsPDF()
         const header = Object.keys(rows[0])
-        const data = rows.map(r => header.map(h => r[h]))
+        const data = rows.map(r =>header.map(h =>r[h]))
 
         // Support both plugin styles: autoTable(doc, opts) or doc.autoTable(opts)
         const autoTable = autoTableModule && (autoTableModule.default || autoTableModule)
@@ -160,7 +160,7 @@ export default function StudentsPage() {
 
     // default to CSV
     const header = Object.keys(rows[0]).join(',')
-    const csv = [header].concat(rows.map(r => Object.values(r).map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))).join('\n')
+    const csv = [header].concat(rows.map(r =>Object.values(r).map(v =>`"${String(v).replace(/"/g, '""')}"`).join(','))).join('\n')
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -175,7 +175,7 @@ export default function StudentsPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage))
   const paginatedStudents = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
-  const handleSearch = (val) => { setSearchQuery(val); setCurrentPage(1) }
+  const handleSearch = (val) =>{ setSearchQuery(val); setCurrentPage(1) }
 
   const statsData = [
     { value: loading ? '...' : stats.total, label: 'Total Students', icon: 'group' },
@@ -185,60 +185,33 @@ export default function StudentsPage() {
   ]
 
   return (
-    <Layout title="Students">
-      <PageContainer>
-        {/* Stats Section */}
-        <StatsSection stats={statsData} />
-
-        {/* Search / Filter Toolbar */}
-        <div className="mb-6">
-          <SearchFilter
+    <Layout title="Students"><PageContainer>{/* Stats Section */}
+        <StatsSection stats={statsData} />{/* Search / Filter Toolbar */}
+        <div className="mb-6"><SearchFilter
             searchQuery={searchQuery}
             onSearchChange={handleSearch}
             onFilterClick={handleFilterClick}
             onExportClick={handleExportClick}
-          />
-        </div>
-
-        {/* Student Table / State Displays */}
+          /></div>{/* Student Table / State Displays */}
         {error ? (
-          <div className="bg-red-50 border border-red-100 rounded-lg p-8 text-center">
-            <span className="material-symbols-outlined text-red-400 text-5xl mb-4">cloud_off</span>
-            <h3 className="text-lg font-bold text-red-900">Connection Error</h3>
-            <p className="text-red-700 mt-1 max-w-sm mx-auto">{error}</p>
-            <button 
+          <div className="bg-red-50 border border-red-100 rounded-lg p-8 text-center"><span className="material-symbols-outlined text-red-400 text-5xl mb-4">cloud_off</span><h3 className="text-lg font-bold text-red-900">Connection Error</h3><p className="text-red-700 mt-1 max-w-sm mx-auto">{error}</p><button 
               onClick={fetchStudents}
               className="mt-6 px-6 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-all"
-            >
-              Retry Connection
-            </button>
-          </div>
-        ) : loading ? (
-          <div className="bg-white rounded-lg border border-gray-200 shadow p-6">
-            <div className="w-full h-96 flex flex-col items-center justify-center gap-4 animate-pulse">
-               <div className="w-12 h-12 bg-slate-100 rounded-full" />
-               <div className="w-48 h-4 bg-slate-100 rounded" />
-               <div className="w-32 h-3 bg-slate-50 rounded" />
-            </div>
-          </div>
-        ) : (
+            >Retry Connection
+            </button></div>) : loading ? (
+          <div className="bg-white rounded-lg border border-gray-200 shadow p-6"><div className="w-full h-96 flex flex-col items-center justify-center gap-4 animate-pulse"><div className="w-12 h-12 bg-slate-100 rounded-full" /><div className="w-48 h-4 bg-slate-100 rounded" /><div className="w-32 h-3 bg-slate-50 rounded" /></div></div>) : (
           <StudentTable 
             students={paginatedStudents} 
             onEdit={handleEdit}
             onDelete={handleDelete}
-          />
-        )}
-      </PageContainer>
-
-      {/* Modal */}
+          />)}
+      </PageContainer>{/* Modal */}
       {isModalOpen && (
         <AddStudentModal
           isOpen={isModalOpen}
           onClose={handleModalClose}
           onSuccess={handleSuccess}
           editStudent={editingStudent}
-        />
-      )}
-    </Layout>
-  )
+        />)}
+    </Layout>)
 }
