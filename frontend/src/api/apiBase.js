@@ -19,6 +19,9 @@ function resolveHostBase() {
     if (window.location.hostname === 'cms1-weof.onrender.com') {
       return 'https://cms-x82g.onrender.com';
     }
+    if (window.location.hostname === 'cms-main-nv6w.onrender.com' || window.location.hostname.endsWith('-nv6w.onrender.com')) {
+      return 'https://cms-backend-oj7w.onrender.com';
+    }
   }
 
   return '';
