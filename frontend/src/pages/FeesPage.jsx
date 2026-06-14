@@ -5,6 +5,7 @@ import KpiGrid from '../components/KpiGrid';
 import { getUserSession } from '../auth/sessionController';
 import { jsPDF } from 'jspdf';
 import { PageContainer, StatsSection } from '../components/common';
+import { Pagination } from '../components/common';
 import { listFees, updateFeePayment } from '../api/feesApi';
 import { listInvoices, updateInvoiceStatus, createInvoice } from '../api/invoicesApi';
 
@@ -25,6 +26,8 @@ export default function FeesPage() {
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [updatingFeeId, setUpdatingFeeId] = useState(null);
   const [expandedFeeId, setExpandedFeeId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(3);
   const [paymentMethod, setPaymentMethod] = useState('');
   const [transactionId, setTransactionId] = useState('');
   const [paymentDetails, setPaymentDetails] = useState({
@@ -420,9 +423,7 @@ export default function FeesPage() {
   };
 
   return (
-    <Layout title="Fee Management"><div className="space-y-8">{/* Header */}
-        <div className="bg-gradient-to-r from-green-700 to-green-600 text-white p-8 rounded-lg shadow-lg"><h1 className="text-3xl font-bold mb-2">Fee Management</h1><p className="text-green-50">{role === 'finance' ? 'Track and manage student fee statuses' : 'Track and pay semester fees'}
-          </p></div>{role === 'finance' && (
+    <Layout title="Fee Management"><div className="space-y-8">{role === 'finance' && (
           <StatsSection stats={[
             { value: stats.totalAssigned, label: 'Total Assigned', icon: 'assignment' },
             { value: stats.paidCount, label: 'Paid Fees', icon: 'check_circle' },
@@ -435,7 +436,7 @@ export default function FeesPage() {
                 <tr><td colSpan={8} className="px-10 py-24 text-center text-slate-400 bg-slate-50/30"><div className="flex flex-col items-center"><span className="material-symbols-outlined text-6xl mb-4 opacity-10 text-slate-900">receipt_long
                       </span><p className="text-base font-bold text-slate-500">No fees assigned yet</p><p className="text-xs font-medium text-slate-400 mt-1">{role === 'finance' ? 'No fee assignments to manage' : 'Contact your institution to assign fees'}
                       </p></div></td></tr>) : (
-                studentFees.map((fee) =>(
+                studentFees.slice((currentPage-1)*pageSize, currentPage*pageSize).map((fee) =>(
                   <React.Fragment key={fee.id}><tr className="hover:bg-slate-50 transition-colors"><td className="px-6 py-4"><div><p className="font-semibold text-slate-900 text-sm">{fee.studentName}</p><p className="text-xs text-slate-500">{fee.applicationId}</p></div></td><td className="px-6 py-4"><span className="text-sm font-medium text-slate-700">{fee.studentId || 'N/A'}</span></td><td className="px-6 py-4"><span className="text-sm text-slate-600">{fee.course}</span></td><td className="px-6 py-4"><span className="text-sm text-slate-600">{fee.semester}</span></td><td className="px-6 py-4"><span className="text-sm font-bold text-orange-600">₹{Number(fee.totalFee).toLocaleString()}</span></td><td className="px-6 py-4"><span
                           className={`px-3 py-1 rounded-full text-xs font-semibold inline-block ${
                             fee.paymentStatus?.toLowerCase() === 'paid'
@@ -499,7 +500,16 @@ export default function FeesPage() {
                           </div></td></tr>)}
                   </React.Fragment>))
               )}
-            </tbody></table></div></div>{/* Payment Method Modal */}
+            </tbody></table>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={Math.max(1, Math.ceil(studentFees.length / pageSize))}
+                onPageChange={setCurrentPage}
+                totalItems={studentFees.length}
+                pageSize={pageSize}
+                onPageSizeChange={(s) => { setPageSize(s); setCurrentPage(1); }}
+              />
+            </div></div>{/* Payment Method Modal */}
       {showPaymentModal && selectedFee && !showPaymentForm && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"><div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 shadow-xl"><h2 className="text-2xl font-bold mb-6">Pay {selectedFee.semester} Fee</h2><div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6"><p className="text-sm text-gray-600 mb-2"><span className="font-semibold">Amount:</span>₹{selectedFee.totalFee.toLocaleString()}
               </p><p className="text-sm text-gray-600"><span className="font-semibold">Course:</span>{selectedFee.course}

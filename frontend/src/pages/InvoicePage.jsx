@@ -5,6 +5,7 @@ import KpiGrid from '../components/KpiGrid';
 import { getUserSession } from '../auth/sessionController';
 import { jsPDF } from 'jspdf';
 import { listInvoices } from '../api/invoicesApi';
+import { Pagination } from '../components/common';
 
 export default function InvoicePage() {
   const session = getUserSession();
@@ -17,6 +18,8 @@ export default function InvoicePage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(3);
 
   const fetchInvoices = useCallback(async () =>{
     try {
@@ -220,9 +223,8 @@ export default function InvoicePage() {
   };
 
   return (
-    <Layout title="Invoices & Bills"><div className="space-y-8">{/* Header */}
-        <div className="bg-gradient-to-r from-green-700 to-green-600 text-white p-8 rounded-lg shadow-lg"><h1 className="text-3xl font-bold mb-2">Invoices & Bills</h1><p className="text-green-50">Your invoices and payment details</p></div>{/* Info Box */}
-        <div className="bg-green-50 border border-green-200 rounded-lg p-6"><h3 className="font-bold text-green-900 mb-3">About This Page</h3><ul className="space-y-2 text-sm text-green-800"><li>• See all your generated invoices</li><li>• Review fee breakdowns</li><li>• Filter by status</li><li>• Download as PDF/Text</li><li>• Click to view full details</li></ul></div>{/* Search Section */}
+    <Layout title="Invoices & Bills"><div className="space-y-8">
+        {/* Search Section */}
         <div className="bg-white rounded-lg shadow p-6"><div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4"><div><label className="block text-sm font-medium text-gray-700 mb-2">Search by Name
               </label><input
                 type="text"
@@ -262,7 +264,7 @@ export default function InvoicePage() {
         <div className="bg-white rounded-lg shadow p-6">{studentInvoices.length === 0 ? (
             <div className="text-center py-12"><span className="material-symbols-outlined text-6xl text-gray-300 block mb-4">receipt
               </span><p className="text-gray-500 text-lg">No invoices found</p><p className="text-gray-400 text-sm">Your invoices will appear here once generated</p></div>) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{studentInvoices.map((invoice) =>(
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{studentInvoices.slice((currentPage-1)*pageSize, currentPage*pageSize).map((invoice) =>(
                 <div
                   key={invoice.id}
                   onClick={() =>handleViewInvoice(invoice)}
@@ -301,6 +303,14 @@ export default function InvoicePage() {
                     >View
                     </button></div></div>))}
             </div>)}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.max(1, Math.ceil(studentInvoices.length / pageSize))}
+            onPageChange={setCurrentPage}
+            totalItems={studentInvoices.length}
+            pageSize={pageSize}
+            onPageSizeChange={(s) => { setPageSize(s); setCurrentPage(1); }}
+          />
         </div></div>{/* Detail Modal */}
       {showDetailModal && selectedInvoice && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"><div className="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 shadow-xl max-h-[90vh] overflow-y-auto"><div className="flex justify-between items-center mb-6"><h2 className="text-2xl font-bold text-gray-800">Invoice Details</h2><button

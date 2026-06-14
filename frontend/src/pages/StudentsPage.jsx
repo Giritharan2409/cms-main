@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
 import SearchFilter from '../components/SearchFilter'
 import StudentTable from '../components/StudentTable'
-import AddStudentModal from '../components/AddStudentModal'
-import { PageContainer, StatsSection } from '../components/common'
+import { PageContainer, StatsSection, Pagination, TableSkeleton } from '../components/common'
 import { buildApiUrl } from '../api/apiBase'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
 export default function StudentsPage() {
+  const navigate = useNavigate()
   const [studentsList, setStudentsList] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -16,9 +17,7 @@ export default function StudentsPage() {
   const [departmentFilter, setDepartmentFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingStudent, setEditingStudent] = useState(null)
-  const itemsPerPage = 8
+  const itemsPerPage = 3
 
   const fetchStudents = async () =>{
     try {
@@ -36,7 +35,7 @@ export default function StudentsPage() {
     }
   }
 
-  useEffect(() =>{
+  useEffect(()=>{
     fetchStudents()
     
     // Listen for student approval events from AdmissionContext
@@ -72,19 +71,8 @@ export default function StudentsPage() {
   }
 
   const handleEdit = (student) =>{
-    setEditingStudent(student)
-    setIsModalOpen(true)
-  }
-
-  const handleModalClose = () =>{
-    setIsModalOpen(false)
-    setEditingStudent(null)
-  }
-
-  const handleSuccess = () =>{
-    fetchStudents()
-    handleModalClose()
-    setCurrentPage(1)
+    const studentId = student._id || student.id || student.rollNumber
+    navigate(`/edit-student/${encodeURIComponent(studentId)}`)
   }
 
   const getStats = () =>({
@@ -192,6 +180,9 @@ export default function StudentsPage() {
             onSearchChange={handleSearch}
             onFilterClick={handleFilterClick}
             onExportClick={handleExportClick}
+            onAddClick={() => navigate('/add-student')}
+            addButtonLabel="Add Student"
+            onBulkClick={() => navigate('/bulk-upload-students')}
           /></div>{/* Student Table / State Displays */}
         {error ? (
           <div className="bg-red-50 border border-red-100 rounded-lg p-8 text-center"><span className="material-symbols-outlined text-red-400 text-5xl mb-4">cloud_off</span><h3 className="text-lg font-bold text-red-900">Connection Error</h3><p className="text-red-700 mt-1 max-w-sm mx-auto">{error}</p><button 
@@ -199,19 +190,20 @@ export default function StudentsPage() {
               className="mt-6 px-6 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-all"
             >Retry Connection
             </button></div>) : loading ? (
-          <div className="bg-white rounded-lg border border-gray-200 shadow p-6"><div className="w-full h-96 flex flex-col items-center justify-center gap-4 animate-pulse"><div className="w-12 h-12 bg-slate-100 rounded-full" /><div className="w-48 h-4 bg-slate-100 rounded" /><div className="w-32 h-3 bg-slate-50 rounded" /></div></div>) : (
-          <StudentTable 
-            students={paginatedStudents} 
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />)}
-      </PageContainer>{/* Modal */}
-      {isModalOpen && (
-        <AddStudentModal
-          isOpen={isModalOpen}
-          onClose={handleModalClose}
-          onSuccess={handleSuccess}
-          editStudent={editingStudent}
-        />)}
+          <TableSkeleton cols={5} rows={6} />
+        ) : (
+          <>
+            <StudentTable 
+              students={paginatedStudents} 
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+            <Pagination 
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={(page) => setCurrentPage(page)}
+            />
+          </>)}
+      </PageContainer>
     </Layout>)
 }

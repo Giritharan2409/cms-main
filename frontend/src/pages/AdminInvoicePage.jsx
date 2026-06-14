@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import Layout from '../components/Layout';
-import { PageContainer, StatsSection, StatusBadge } from '../components/common';
+import { PageContainer, StatsSection, StatusBadge, Pagination } from '../components/common';
 import KpiCard from '../components/KpiCard';
 import KpiGrid from '../components/KpiGrid';
 import { jsPDF } from 'jspdf';
@@ -16,6 +16,8 @@ export default function AdminInvoicePage() {
   const [courseFilter, setCourseFilter] = useState('all');
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(3);
 
   const fetchInvoices = useCallback(async () =>{
     try {
@@ -315,8 +317,8 @@ export default function AdminInvoicePage() {
                   <option key={course} value={course}>{course}
                   </option>))}
               </select></div></div>{filteredInvoices.length === 0 ? (
-            <div className="text-center py-12 text-gray-500"><span className="material-symbols-outlined text-4xl block mb-4 text-gray-300">receipt_long</span><p className="font-medium">No invoices found</p></div>) : (
-            <div className="overflow-x-auto"><table className="w-full text-sm min-w-[750px]"><thead><tr className="border-b-2 border-gray-200"><th className="text-left py-3 px-4 font-semibold text-gray-700">Invoice ID</th><th className="text-left py-3 px-4 font-semibold text-gray-700">Student Name</th><th className="text-left py-3 px-4 font-semibold text-gray-700">Student ID</th><th className="text-left py-3 px-4 font-semibold text-gray-700">Course</th><th className="text-left py-3 px-4 font-semibold text-gray-700">Amount</th><th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th><th className="text-left py-3 px-4 font-semibold text-gray-700">Actions</th></tr></thead><tbody>{filteredInvoices.map((invoice) =>(
+            <div className="text-center py-12 text-gray-500"><span className="material-symbols-outlined text-4xl block mb-4 text-gray-300">receipt_long</span><p className="font-medium">No invoices found</p></div>) : (<>
+            <div className="overflow-x-auto"><table className="w-full text-sm min-w-[750px]"><thead><tr className="border-b-2 border-gray-200"><th className="text-left py-3 px-4 font-semibold text-gray-700">Invoice ID</th><th className="text-left py-3 px-4 font-semibold text-gray-700">Student Name</th><th className="text-left py-3 px-4 font-semibold text-gray-700">Student ID</th><th className="text-left py-3 px-4 font-semibold text-gray-700">Course</th><th className="text-left py-3 px-4 font-semibold text-gray-700">Amount</th><th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th><th className="text-left py-3 px-4 font-semibold text-gray-700">Actions</th></tr></thead><tbody>{filteredInvoices.slice((currentPage-1)*pageSize, currentPage*pageSize).map((invoice) =>(
                     <tr key={invoice.id} className="border-b border-gray-100 hover:bg-gray-50"><td className="py-3 px-4 text-gray-700 font-mono">{invoice.id}</td><td className="py-3 px-4 text-gray-700">{invoice.studentName}</td><td className="py-3 px-4 text-gray-700">{invoice.studentId}</td><td className="py-3 px-4 text-gray-700">{invoice.course}</td><td className="py-3 px-4 font-semibold text-gray-900">₹{invoice.total?.toLocaleString()}</td><td className="py-3 px-4"><span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                           invoice.paymentStatus?.toLowerCase() === 'paid'
                             ? 'bg-green-100 text-green-800'
@@ -341,7 +343,16 @@ export default function AdminInvoicePage() {
                             className="p-2 hover:bg-red-100 text-red-600 rounded transition"
                             title="Delete"
                           ><span className="material-symbols-outlined text-lg">delete</span></button></div></td></tr>))}
-                </tbody></table></div>)}
+                </tbody></table></div>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={Math.max(1, Math.ceil(filteredInvoices.length / pageSize))}
+                onPageChange={setCurrentPage}
+                totalItems={filteredInvoices.length}
+                pageSize={pageSize}
+                onPageSizeChange={(s) => { setPageSize(s); setCurrentPage(1); }}
+              />
+            </>)}
         </div></PageContainer>{/* Detail Modal */}
       {showDetailModal && selectedInvoice && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"><div className="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 shadow-xl max-h-[90vh] overflow-y-auto"><div className="flex justify-between items-center mb-6"><h2 className="text-2xl font-bold text-gray-800">Invoice Details</h2><button

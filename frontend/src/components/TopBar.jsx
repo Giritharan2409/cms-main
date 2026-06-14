@@ -61,18 +61,39 @@ export default function TopBar({
     team: dynamicUser.department || dynamicUser.departmentId || cmsRoles[role]?.team || 'Department',
   } : (cmsRoles[role] || cmsRoles.student)
 
+  const roleQuery = `?role=${encodeURIComponent(role)}`
+
+  const handlePrimaryClick = () => {
+    if (onProfilePrimaryAction) {
+      onProfilePrimaryAction()
+      return
+    }
+    if (role === 'faculty') {
+      navigate(`/attendance${roleQuery}`)
+    } else if (role === 'finance') {
+      navigate(`/admin-fees${roleQuery}`)
+    } else if (role === 'student') {
+      navigate(`/timetable${roleQuery}`)
+    }
+  }
+
+  const handleSecondaryClick = () => {
+    if (onProfileSecondaryAction) {
+      onProfileSecondaryAction()
+      return
+    }
+    if (role === 'faculty') {
+      navigate(`/exams${roleQuery}`)
+    } else if (role === 'finance') {
+      navigate(`/payroll${roleQuery}`)
+    } else if (role === 'student') {
+      navigate(`/attendance${roleQuery}`)
+    }
+  }
+
   return (
     <header className={`h-16 md:h-20 bg-white md:bg-white/80 border-b border-slate-100 flex items-center justify-between sticky top-0 z-10 md:backdrop-blur-md transition-all duration-300 px-4 md:px-6`}>
       <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
-        <button
-          onClick={onToggleSidebar}
-          className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 active:scale-95 transition-all flex items-center justify-center flex-shrink-0 cursor-pointer"
-          title={isSidebarVisible ? "Collapse sidebar" : "Expand sidebar"}
-        >
-          <span className="material-symbols-outlined text-[22px] md:text-[24px] font-medium">
-            {isSidebarVisible ? 'menu_open' : 'menu'}
-          </span>
-        </button>
         <div className="min-w-0">
           {(!isSidebarVisible || isMobile) && (
             <p className="text-[10px] md:text-xs font-semibold text-[#276221] tracking-wider uppercase leading-none mb-1">
@@ -148,8 +169,8 @@ export default function TopBar({
             user={{ ...user, avatar: avatarUrl }}
             userId={session?.userId || userId}
             role={role}
-            onPrimaryAction={onProfilePrimaryAction}
-            onSecondaryAction={onProfileSecondaryAction}
+            onPrimaryAction={handlePrimaryClick}
+            onSecondaryAction={handleSecondaryClick}
           />
         </div>
       </div>

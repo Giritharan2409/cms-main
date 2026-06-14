@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
+import { Pagination } from '../components/common'
 import Layout from '../components/Layout'
 import KpiCard from '../components/KpiCard'
 import KpiGrid from '../components/KpiGrid'
@@ -65,6 +66,8 @@ export default function ExamsPage({ noLayout = false }) {
   const [showNotificationPanel, setShowNotificationPanel] = useState(false)
   const [selectedExam, setSelectedExam] = useState(null)
   const [studentRegistrations, setStudentRegistrations] = useState([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(3)
   
   // Handle exam registration
   const handleRegister = async (examId) => {
@@ -391,7 +394,7 @@ export default function ExamsPage({ noLayout = false }) {
                 </td>
               </tr>
             ) : (
-              exams.map((exam) => (
+              exams.slice((currentPage-1)*pageSize, currentPage*pageSize).map((exam) => (
                 <tr key={exam._id || exam.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4">
                     <p className="text-xs font-bold text-[#276221] uppercase">{exam.code}</p>
@@ -563,6 +566,14 @@ export default function ExamsPage({ noLayout = false }) {
             )}
           </tbody>
         </table>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={Math.max(1, Math.ceil(exams.length / pageSize))}
+          onPageChange={setCurrentPage}
+          totalItems={exams.length}
+          pageSize={pageSize}
+          onPageSizeChange={(s) => { setPageSize(s); setCurrentPage(1); }}
+        />
       </div>
 
       <Modal

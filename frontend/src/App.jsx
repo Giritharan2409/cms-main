@@ -34,6 +34,10 @@ const FacultyDepartmentPage = lazy(() => import('./pages/FacultyDepartmentPage')
 const AddMemberSelectionPage = lazy(() => import('./pages/AddMemberSelectionPage'));
 const AddStudentPage = lazy(() => import('./pages/AddStudentPage'));
 const AddFacultyPage = lazy(() => import('./pages/AddFacultyPage'));
+const EditStudentPage = lazy(() => import('./pages/EditStudentPage'));
+const EditFacultyPage = lazy(() => import('./pages/EditFacultyPage'));
+const BulkUploadStudentPage = lazy(() => import('./pages/BulkUploadStudentPage'));
+const BulkUploadFacultyPage = lazy(() => import('./pages/BulkUploadFacultyPage'));
 
 export default function App() {
   const [, setAuthVersion] = useState(0);
@@ -103,8 +107,12 @@ export default function App() {
             />
             <Route path="/students" element={<ProtectedRoute allowedRoles={['admin', 'faculty']}><StudentPageWrapper /></ProtectedRoute>} />
             <Route path="/students/:id" element={<ProtectedRoute allowedRoles={['admin', 'faculty', 'student']}><StudentProfilePage /></ProtectedRoute>} />
+            <Route path="/edit-student/:id" element={<ProtectedRoute allowedRoles={['admin']}><EditStudentPage /></ProtectedRoute>} />
+            <Route path="/bulk-upload-students" element={<ProtectedRoute allowedRoles={['admin']}><BulkUploadStudentPage /></ProtectedRoute>} />
             <Route path="/faculty" element={<ProtectedRoute allowedRoles={['admin']}><FacultyPage /></ProtectedRoute>} />
             <Route path="/faculty/:id" element={<ProtectedRoute allowedRoles={['admin', 'faculty']}><FacultyProfilePage /></ProtectedRoute>} />
+            <Route path="/edit-faculty/:id" element={<ProtectedRoute allowedRoles={['admin']}><EditFacultyPage /></ProtectedRoute>} />
+            <Route path="/bulk-upload-faculty" element={<ProtectedRoute allowedRoles={['admin']}><BulkUploadFacultyPage /></ProtectedRoute>} />
             <Route path="/department" element={<ProtectedRoute allowedRoles={['admin', 'faculty']}><FacultyDepartmentPage /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute allowedRoles={['admin', 'faculty']}><ComingSoonPage /></ProtectedRoute>} />
             <Route path="/admission" element={<ProtectedRoute allowedRoles={['admin']}><AdmissionPage /></ProtectedRoute>} />

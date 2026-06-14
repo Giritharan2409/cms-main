@@ -1,4 +1,4 @@
-export default function SearchFilter({ searchQuery, onSearchChange, onAddClick, addButtonLabel = 'Add Student', placeholder = 'Search students by name, ID, or department...', onFilterClick, onExportClick }) {
+export default function SearchFilter({ searchQuery, onSearchChange, onAddClick, addButtonLabel = 'Add Student', placeholder = 'Search students by name, ID, or department...', onFilterClick, onExportClick, onBulkClick, bulkButtonLabel = 'Bulk Upload' }) {
   return (
     <div className="flex flex-col gap-3 sm:gap-4 mb-6 md:mb-8">
       <div className="relative flex-1 group w-full">
@@ -22,6 +22,15 @@ export default function SearchFilter({ searchQuery, onSearchChange, onAddClick, 
           <span className="hidden sm:inline">Export</span>
         </button>
         <div className="w-px h-6 bg-slate-200 mx-1 hidden lg:block" />
+        {onBulkClick && (
+          <button
+            onClick={onBulkClick}
+            className="flex items-center justify-center gap-2 h-10 px-4 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-100 hover:border-slate-300 active:scale-[0.98] transition-all shadow-sm flex-1 sm:flex-none whitespace-nowrap"
+          >
+            <span className="material-symbols-outlined text-lg">upload_file</span>
+            <span>{bulkButtonLabel}</span>
+          </button>
+        )}
         {onAddClick && (
           <button
             onClick={onAddClick}

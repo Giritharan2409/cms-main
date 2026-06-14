@@ -9,6 +9,7 @@ export default function AddFacultyPage() {
   const { addFacultyApp } = useAdmission();
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     // Step 1: Personal
     fullName: '',
@@ -16,6 +17,8 @@ export default function AddFacultyPage() {
     phone: '',
     dateOfBirth: '',
     gender: '',
+    defaultPassword: '',
+    useAutoPassword: true,
     // Step 2: Professional
     role: '',
     department: '',
@@ -176,6 +179,11 @@ export default function AddFacultyPage() {
       setIsLoading(false);
       return;
     }
+    if (!formData.useAutoPassword && (!formData.defaultPassword || !formData.defaultPassword.trim())) {
+      alert(' Custom Password is required when auto-password is not selected');
+      setIsLoading(false);
+      return;
+    }
 
     setIsLoading(true);
     const facultyData = {
@@ -196,6 +204,7 @@ export default function AddFacultyPage() {
       employmentType: formData.employmentType,
       paymentMethod: formData.paymentMethod,
       paymentStatus: 'Paid',
+      password: formData.useAutoPassword ? '' : formData.defaultPassword,
       status: 'Pending',
       type: 'faculty',
     };
@@ -243,7 +252,7 @@ export default function AddFacultyPage() {
       
       const empId = result.employeeId || result.id || 'Processing';
       alert(` Faculty application submitted successfully!\n\nEmployee ID: ${empId}\n\nYour application is now under review.`);
-      navigate('/admission');
+      navigate('/faculty');
     } catch (error) {
       if (error.name === 'AbortError') {
         console.error(' Request timeout:', error);
@@ -262,7 +271,7 @@ export default function AddFacultyPage() {
   return (
     <Layout title="Add New Faculty"><div className="space-y-4">{/* Page Header */}
         <div className="bg-white rounded-lg shadow p-4 flex items-center justify-between"><div className="flex items-center gap-3"><div className="p-2 bg-[#276221]/10 rounded-lg"><span className="material-symbols-outlined text-lg text-[#276221]">school</span></div><div><h1 className="text-lg font-bold text-gray-900">Add New Faculty</h1><p className="text-xs text-gray-600 mt-0.5">Step {currentStep} of 7: {steps[currentStep-1].title}</p></div></div><button
-            onClick={() =>navigate('/add-member')}
+            onClick={() =>navigate('/faculty')}
             className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
           ><span className="material-symbols-outlined text-base">arrow_back</span><span className="font-medium">Back</span></button></div>{/* Progress Bar */}
         <div className="bg-white rounded-lg shadow overflow-hidden"><div className="flex h-1.5">{steps.map((s) =>(
@@ -273,7 +282,29 @@ export default function AddFacultyPage() {
           </div></div>{/* Form Container */}
         <div className="bg-white rounded-lg shadow p-6"><div className="space-y-6">{/* Step 1: Personal */}
             {currentStep === 1 && (
-              <div className="space-y-4 animate-in slide-in-from-right-4 duration-300"><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Full Name <span className="text-red-500">*</span></label><input name="fullName" value={formData.fullName} onChange={handleInputChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#276221]/20" placeholder="Enter full name" /></div><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Email <span className="text-red-500">*</span></label><input type="email" name="email" value={formData.email} onChange={handleInputChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2" placeholder="example@edu.com" /></div><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Phone <span className="text-red-500">*</span></label><input name="phone" value={formData.phone} onChange={handleInputChange} maxLength="10" pattern="[0-9]{10}" className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2" placeholder="10-digit number" /></div><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Date of Birth <span className="text-red-500">*</span></label><input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleInputChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2" /></div><div className="space-y-1 md:col-span-2"><label className="text-xs font-semibold text-gray-700">Gender <span className="text-red-500">*</span></label><select name="gender" value={formData.gender} onChange={handleInputChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 bg-white"><option value="">Select Gender</option><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select></div></div></div>)}
+              <div className="space-y-4 animate-in slide-in-from-right-4 duration-300"><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Full Name <span className="text-red-500">*</span></label><input name="fullName" value={formData.fullName} onChange={handleInputChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#276221]/20" placeholder="Enter full name" /></div><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Email <span className="text-red-500">*</span></label><input type="email" name="email" value={formData.email} onChange={handleInputChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2" placeholder="example@edu.com" /></div><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Phone <span className="text-red-500">*</span></label><input name="phone" value={formData.phone} onChange={handleInputChange} maxLength="10" pattern="[0-9]{10}" className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2" placeholder="10-digit number" /></div><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Date of Birth <span className="text-red-500">*</span></label><input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleInputChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2" /></div><div className="space-y-1 md:col-span-2"><label className="text-xs font-semibold text-gray-700">Gender <span className="text-red-500">*</span></label><select name="gender" value={formData.gender} onChange={handleInputChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 bg-white"><option value="">Select Gender</option><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select></div></div>
+                {/* Default Password */}
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="material-symbols-outlined text-amber-600 text-lg">lock</span>
+                    <label className="text-xs font-bold text-amber-800 uppercase tracking-wider">Default Password</label>
+                  </div>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" checked={formData.useAutoPassword} onChange={(e) => setFormData(prev => ({ ...prev, useAutoPassword: e.target.checked, defaultPassword: '' }))} className="w-4 h-4 rounded text-[#276221] focus:ring-[#276221]" />
+                    <span className="text-xs text-gray-700 font-medium">Auto-generate from Employee ID</span>
+                  </label>
+                  {!formData.useAutoPassword && (
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-gray-700">Custom Password <span className="text-red-500">*</span></label>
+                      <div className="relative">
+                        <input type={showPassword ? 'text' : 'password'} name="defaultPassword" value={formData.defaultPassword} onChange={handleInputChange} className="w-full px-3 py-2 pr-10 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#276221]/20" placeholder="Enter default password" />
+                        <button type="button" onClick={() => setShowPassword(prev => !prev)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 transition-colors" title={showPassword ? 'Hide password' : 'Show password'}>
+                          <span className="material-symbols-outlined text-[18px]">{showPassword ? 'visibility_off' : 'visibility'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div></div>)}
 
             {/* Step 2: Professional */}
             {currentStep === 2 && (

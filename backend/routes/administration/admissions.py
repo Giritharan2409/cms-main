@@ -136,6 +136,7 @@ def _normalize_from_flat_payload(payload: dict[str, Any]) -> dict[str, Any]:
         },
         "payment_status": payment_status,
         "paymentStatus": payment_status,
+        "password": payload.get("password") or "",
     }
 
     # Keep nested structure for backwards compatibility with any existing API consumers.
@@ -198,6 +199,7 @@ def _normalize_from_nested_payload(payload: dict[str, Any]) -> dict[str, Any]:
             "courseCategory": course.get("category") or "",
             "payment_status": payment_status,
             "paymentStatus": payment_status,
+            "password": payload.get("password") or admission.get("password") or "",
             "course_info": {
                 "category": course.get("category") or "",
                 "course": course.get("course") or "",
@@ -384,6 +386,7 @@ async def _create_student_from_admission(admission: dict[str, Any]) -> bool:
             # Personal Information
             "name": name,
             "email": email,
+            "password": admission.get("password") or student_id,
             "phone": admission.get("phone") or "",
             "gender": admission.get("gender") or "",
             "dateOfBirth": admission.get("dateOfBirth") or admission.get("dob") or "",
@@ -478,6 +481,7 @@ async def _create_faculty_from_admission(admission: dict[str, Any]) -> bool:
             "name": name,
             "email": admission.get("email") or "",
             "phone": admission.get("phone") or "",
+            "password": admission.get("password") or faculty_id,
             "department_id": department,
             "department": department,
             "designation": admission.get("designation") or "Assistant Professor",

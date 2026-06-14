@@ -13,7 +13,16 @@ router = APIRouter(prefix="/api/invoices", tags=["Invoices"])
 
 @router.get("", response_model=List[dict])
 async def get_invoices():
-    db = get_db()
+    try:
+        db = get_db()
+    except HTTPException as error:
+        if error.status_code == 503:
+            from backend.dev_store import list_items
+            try:
+                return list_items("invoices")
+            except KeyError:
+                return []
+        raise
     invoices = []
     async for inv in db["invoices"].find().sort("generated_date", -1):
         invoices.append(serialize_doc(inv))

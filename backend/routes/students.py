@@ -1,4 +1,7 @@
 from copy import deepcopy
+from typing import List, Optional
+from datetime import datetime, timezone
+from pydantic import BaseModel
 
 from fastapi import APIRouter, HTTPException
 from pymongo import ReturnDocument
@@ -643,3 +646,105 @@ async def add_student_subject(student_id: str, subject: dict):
     if not result:
         raise HTTPException(status_code=404, detail="Student not found")
     return subject
+
+
+class BulkStudentImportPayload(BaseModel):
+    students: List[dict]
+    defaultPassword: Optional[str] = None
+
+
+@router.post("/bulk-import")
+async def bulk_import_students(payload: BulkStudentImportPayload):
+    try:
+        db = get_db()
+        use_db = True
+    except HTTPException as error:
+        if error.status_code == 503:
+            use_db = False
+        else:
+            raise
+
+    imported_count = 0
+    records = []
+
+    for index, s in enumerate(payload.students):
+        # Generate student ID / roll number if not provided
+        student_id = s.get("id") or s.get("rollNumber") or f"STU-2025-{int(datetime.now(timezone.utc).timestamp() * 1000) % 1000000 + index}"
+        
+        # Determine password
+        password = payload.defaultPassword or s.get("password") or student_id
+        
+        # Prepare admission record
+        admission_record = {
+            "id": student_id,
+            "admission_id": student_id,
+            "role": "student",
+            "type": "student",
+            "status": "Pending",
+            "createdDate": datetime.now(timezone.utc).date().isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "name": s.get("name", s.get("fullName", "")),
+            "fullName": s.get("fullName", s.get("name", "")),
+            "email": s.get("email", ""),
+            "phone": s.get("phone", ""),
+            "dateOfBirth": s.get("dateOfBirth") or s.get("dob") or "",
+            "gender": s.get("gender", "Male"),
+            "previousSchool": s.get("previousSchool", ""),
+            "board": s.get("board", "CBSE"),
+            "yearOfPassing": int(s.get("yearOfPassing") or 2024),
+            "marksPercentage": float(s.get("marksPercentage") or 0.0),
+            "courseCategory": s.get("courseCategory", s.get("department", "Computer Science")),
+            "course": s.get("course", "CSE"),
+            "quota": s.get("quota", "Government Quota"),
+            "accommodation": s.get("accommodation", "Day Scholar"),
+            "roomType": s.get("roomType", ""),
+            "password": password,
+            "payment_status": "Paid",
+            "paymentStatus": "Paid",
+            "payment": {
+                "application_fee": 500.0,
+                "payment_method": "UPI",
+                "transaction_id": f"TXN-{int(datetime.now(timezone.utc).timestamp() * 1000) % 1000000}",
+                "status": "Paid"
+            }
+        }
+        
+        # For compatibility
+        admission_record["personal"] = {
+            "full_name": admission_record["fullName"],
+            "gender": admission_record["gender"],
+            "dob": admission_record["dateOfBirth"],
+            "email": admission_record["email"],
+            "phone": admission_record["phone"],
+            "student_id": student_id,
+            "address": s.get("address", "")
+        }
+        admission_record["academic"] = {
+            "previous_school": admission_record["previousSchool"],
+            "board": admission_record["board"],
+            "year_of_passing": admission_record["yearOfPassing"],
+            "marks_percentage": admission_record["marksPercentage"]
+        }
+        admission_record["course_info"] = {
+            "category": admission_record["courseCategory"],
+            "course": admission_record["course"]
+        }
+
+        records.append(admission_record)
+
+    if use_db:
+        if records:
+            await db["admissions"].insert_many(records)
+            imported_count = len(records)
+    else:
+        if "admissions" not in DEV_STORE:
+            DEV_STORE["admissions"] = []
+        for r in records:
+            DEV_STORE["admissions"].insert(0, deepcopy(r))
+        imported_count = len(records)
+
+    return {
+        "status": "success",
+        "message": f"Successfully imported {imported_count} student admission requests.",
+        "count": imported_count
+    }

@@ -885,7 +885,7 @@ async def submit_faculty_admission(faculty_data: dict = Body(...)):
             **faculty_data,
             "employeeId": employee_id,
             "id": employee_id,
-            "password": employee_id,
+            "password": faculty_data.get("password") or employee_id,
             "created_at": datetime.now(),
             "status": "Pending",
             "type": "faculty",
@@ -1260,4 +1260,82 @@ async def check_compliance():
                 pass # ignore poorly formatted dates
                 
     return {"status": "success", "notifications_generated": count}
+
+
+class BulkFacultyImportPayload(BaseModel):
+    faculty: List[dict]
+    defaultPassword: Optional[str] = None
+
+
+@router.post("/bulk-import")
+async def bulk_import_faculty(payload: BulkFacultyImportPayload):
+    try:
+        db = get_db()
+        collection = db["faculty"]
+        use_db = True
+    except HTTPException as error:
+        if error.status_code == 503:
+            use_db = False
+        else:
+            raise
+
+    imported_count = 0
+    records = []
+
+    for index, f in enumerate(payload.faculty):
+        # Generate employeeId/facultyId if not provided
+        timestamp_part = int(datetime.now().timestamp() * 1000) % 10000
+        employee_id = f.get("employeeId") or f.get("id") or f"FAC-{timestamp_part + index:04d}"
+        
+        # Determine password
+        password = payload.defaultPassword or f.get("password") or employee_id
+        
+        # Determine designation and role
+        designation = f.get("designation", f.get("role", "Assistant Professor"))
+        role = get_role_from_designation(designation)
+        
+        faculty_doc = {
+            "name": f.get("name") or f.get("fullName") or "",
+            "fullName": f.get("fullName") or f.get("name") or "",
+            "email": f.get("email", ""),
+            "phone": f.get("phone", ""),
+            "dateOfBirth": f.get("dateOfBirth") or f.get("dob") or "",
+            "gender": f.get("gender", "Male"),
+            "role": role,
+            "designation": designation,
+            "department": f.get("department", "Computer Science"),
+            "department_id": f.get("department_id") or f.get("department", "Computer Science"),
+            "departmentId": f.get("departmentId") or f.get("department", "Computer Science"),
+            "yearsOfExperience": int(f.get("yearsOfExperience") or 0),
+            "highestQualification": f.get("highestQualification") or f.get("qualification") or "",
+            "qualification": f.get("qualification") or f.get("highestQualification") or "",
+            "specialization": f.get("specialization", ""),
+            "university": f.get("university", ""),
+            "employmentType": f.get("employmentType", "Full-Time"),
+            "employeeId": employee_id,
+            "id": employee_id,
+            "password": password,
+            "created_at": datetime.now(),
+            "status": "Pending",
+            "type": "faculty"
+        }
+        
+        records.append(faculty_doc)
+
+    if use_db:
+        if records:
+            await collection.insert_many(records)
+            imported_count = len(records)
+    else:
+        if "faculty" not in DEV_STORE:
+            DEV_STORE["faculty"] = []
+        for r in records:
+            DEV_STORE["faculty"].insert(0, deepcopy(r))
+        imported_count = len(records)
+
+    return {
+        "status": "success",
+        "message": f"Successfully imported {imported_count} faculty admission requests.",
+        "count": imported_count
+    }
 

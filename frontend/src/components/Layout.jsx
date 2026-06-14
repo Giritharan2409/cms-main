@@ -32,6 +32,9 @@ export default function Layout({
 }) {
   const isMobile = useIsMobile()
   const [isSidebarVisible, setIsSidebarVisible] = useState(!isMobile)
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    return localStorage.getItem('sidebar_collapsed') === 'true';
+  })
 
   // Auto-close sidebar when switching to mobile, auto-open on desktop
   useEffect(() => {
@@ -46,9 +49,22 @@ export default function Layout({
     setIsSidebarVisible(false)
   }, [])
 
+  const toggleCollapse = useCallback(() => {
+    setIsCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem('sidebar_collapsed', String(next));
+      return next;
+    });
+  }, []);
+
   return (
     <div className="flex min-h-screen bg-[#f8fafc] text-[#1e293b]">
-      <AcademicSidebar isSidebarVisible={isSidebarVisible} onToggleSidebar={toggleSidebar} />
+      <AcademicSidebar 
+        isSidebarVisible={isSidebarVisible} 
+        onToggleSidebar={toggleSidebar} 
+        isCollapsed={isCollapsed}
+        onToggleCollapse={toggleCollapse}
+      />
 
       {/* Mobile backdrop overlay */}
       {isSidebarVisible && isMobile && (
@@ -59,9 +75,7 @@ export default function Layout({
         />
       )}
 
-
-
-      <main className={`flex-1 flex flex-col min-w-0 overflow-x-clip transition-all duration-300 ${isSidebarVisible && !isMobile ? 'ml-64' : 'ml-0'}`}>
+      <main className={`flex-1 flex flex-col min-w-0 overflow-x-clip transition-all duration-300 ${isSidebarVisible && !isMobile ? (isCollapsed ? 'ml-20' : 'ml-64') : 'ml-0'}`}>
         <TopBar 
           title={title} 
           isSidebarVisible={isSidebarVisible}

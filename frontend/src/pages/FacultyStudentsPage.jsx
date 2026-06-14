@@ -447,40 +447,6 @@ export default function FacultyStudentsPage() {
   return (
     <Layout title="Students">
       <div style={{ paddingBottom: '40px' }}>
-        {/* Header */}
-        <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#1f2937', margin: '0 0 8px 0' }}>
-              Students
-            </h1>
-            <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>
-              Manage and monitor student records mapped to your courses
-            </p>
-          </div>
-          <button
-            onClick={() => setIsAddStudentOpen(true)}
-            style={{
-              padding: '10px 16px',
-              background: '#276221',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              transition: 'all 0.2s',
-              whiteSpace: 'nowrap'
-            }}
-            onMouseEnter={(e) => e.target.style.background = '#1e4618'}
-            onMouseLeave={(e) => e.target.style.background = '#276221'}
-          >
-            <Plus size={18} />
-            Add Student
-          </button>
-        </div>
 
         {/* Stats Grid */}
         <KpiGrid>

@@ -101,6 +101,7 @@ DEV_STORE = {
     ],
     "students": [],
     "od_requests": [],
+    "invoices": [],
 }
 
 

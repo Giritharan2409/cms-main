@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import FacultyTable from '../components/FacultyTable';
 import SearchFilter from '../components/SearchFilter';
-import AddEditFacultyModal from '../components/AddEditFacultyModal';
-import { PageContainer, StatsSection } from '../components/common';
+import { PageContainer, StatsSection, Pagination, TableSkeleton } from '../components/common';
 import { API_BASE } from '../api/apiBase';
 import '../styles.css';
 import { jsPDF } from 'jspdf';
@@ -12,6 +12,7 @@ import autoTable from 'jspdf-autotable';
 const API_BASE_URL = API_BASE;
 
 export default function FacultyPage() {
+  const navigate = useNavigate();
   const [facultyList, setFacultyList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -19,10 +20,8 @@ export default function FacultyPage() {
   const [departmentFilter, setDepartmentFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingFaculty, setEditingFaculty] = useState(null);
   
-  const ITEMS_PER_PAGE = 8;
+  const ITEMS_PER_PAGE = 3;
 
   useEffect(() => {
     fetchFaculty();
@@ -122,8 +121,8 @@ export default function FacultyPage() {
   };
 
   const handleEditFaculty = (faculty) => {
-    setEditingFaculty(faculty);
-    setIsModalOpen(true);
+    const facultyId = faculty._id || faculty.id || faculty.employeeId;
+    navigate(`/edit-faculty/${encodeURIComponent(facultyId)}`);
   };
 
   const handleDeleteFaculty = async (faculty) => {
@@ -144,17 +143,6 @@ export default function FacultyPage() {
       console.error('Error deleting faculty:', err);
       alert('Error deleting faculty member');
     }
-  };
-
-  const handleModalClose = () => {
-    setIsModalOpen(false);
-    setEditingFaculty(null);
-  };
-
-  const handleModalSuccess = async () => {
-    setIsModalOpen(false);
-    setEditingFaculty(null);
-    await fetchFaculty();
   };
 
   const activeFaculty = facultyList.filter(f => f.employment_status === 'Active').length;
@@ -182,6 +170,9 @@ export default function FacultyPage() {
             placeholder="Search faculty by name, ID, or email..."
             onFilterClick={handleFilterClick}
             onExportClick={handleExportClick}
+            onAddClick={() => navigate('/add-faculty')}
+            addButtonLabel="Add Faculty"
+            onBulkClick={() => navigate('/bulk-upload-faculty')}
           />
         </div>
 
@@ -199,31 +190,22 @@ export default function FacultyPage() {
             </button>
           </div>
         ) : loading ? (
-          <div className="bg-white rounded-lg border border-gray-200 shadow p-6">
-            <div className="w-full h-96 flex flex-col items-center justify-center gap-4 animate-pulse">
-              <div className="w-12 h-12 bg-slate-100 rounded-full" />
-              <div className="w-48 h-4 bg-slate-100 rounded" />
-              <div className="w-32 h-3 bg-slate-50 rounded" />
-            </div>
-          </div>
+          <TableSkeleton cols={5} rows={6} />
         ) : (
-          <FacultyTable 
-            faculty={paginatedFaculty}
-            onEdit={handleEditFaculty}
-            onDelete={handleDeleteFaculty}
-          />
+          <>
+            <FacultyTable 
+              faculty={paginatedFaculty}
+              onEdit={handleEditFaculty}
+              onDelete={handleDeleteFaculty}
+            />
+            <Pagination 
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={(page) => setCurrentPage(page)}
+            />
+          </>
         )}
       </PageContainer>
-
-      {/* Modal */}
-      {isModalOpen && (
-        <AddEditFacultyModal 
-          faculty={editingFaculty}
-          isOpen={isModalOpen}
-          onClose={handleModalClose}
-          onSuccess={handleModalSuccess}
-        />
-      )}
     </Layout>
   );
 }

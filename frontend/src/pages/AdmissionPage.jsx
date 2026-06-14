@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useAdmission } from '../context/AdmissionContext';
 import AdmissionDetailsModal from '../components/AdmissionDetailsModal';
-import { PageContainer, StatsSection, StatusBadge, ActionButtons } from '../components/common';
+import { PageContainer, StatsSection, StatusBadge, ActionButtons, Pagination, TableSkeleton } from '../components/common';
 
 export default function AdmissionPage() {
   const navigate = useNavigate();
@@ -14,12 +14,20 @@ export default function AdmissionPage() {
     updateFacultyStatus,
     deleteStudentApp,
     deleteFacultyApp,
+    loading,
   } = useAdmission();
 
   const [activeTab, setActiveTab] = useState('students');
   const [searchName, setSearchName] = useState('');
   const [selectedApp, setSelectedApp] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 3;
+
+  // Reset page when tab or search query changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchName]);
 
   const filteredApps = useMemo(() =>{
     let apps = activeTab === 'students' ? studentApps : facultyApps;
@@ -38,6 +46,12 @@ export default function AdmissionPage() {
       app.fullName?.toLowerCase().includes(searchName.toLowerCase())
     );
   }, [activeTab, studentApps, facultyApps, searchName]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredApps.length / itemsPerPage));
+  const paginatedApps = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredApps.slice(start, start + itemsPerPage);
+  }, [filteredApps, currentPage, itemsPerPage]);
 
   const stats = [
     { value: studentApps.length, label: 'Total Student Adm', icon: 'group' },
@@ -129,28 +143,36 @@ export default function AdmissionPage() {
                 value={searchName}
                 onChange={(e) =>setSearchName(e.target.value)}
                 className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
-              /><button
-                onClick={() =>navigate('/add-member')}
-                className="w-full sm:w-auto px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-800 flex items-center justify-center gap-2"
-              ><span className="material-symbols-outlined">add</span>Add Member
-              </button></div></div>{/* Table */}
-          <div className="overflow-x-auto"><table className="w-full text-sm min-w-[750px]"><thead><tr className="border-b-2 border-gray-200"><th className="text-left py-3 px-4 font-semibold text-gray-700">{activeTab === 'students' ? 'Application ID' : 'Employee ID'}
-                  </th><th className="text-left py-3 px-4 font-semibold text-gray-700">Name</th><th className="text-left py-3 px-4 font-semibold text-gray-700">{activeTab === 'students' ? 'Course' : 'Role'}
-                  </th>{activeTab === 'faculty' && (
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Department</th>)}
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th><th className="text-left py-3 px-4 font-semibold text-gray-700">Payment Status</th><th className="text-left py-3 px-4 font-semibold text-gray-700">Actions</th></tr></thead><tbody>{filteredApps.map((app) =>(
-                  <tr key={app.id} className="border-b border-gray-100 hover:bg-gray-50"><td className="py-3 px-4 text-gray-700">{app.id}</td><td className="py-3 px-4 text-gray-700">{app.name || app.fullName}</td><td className="py-3 px-4 text-gray-700">{activeTab === 'students' ? getValue(app.course) : getValue(app.role)}
-                    </td>{activeTab === 'faculty' && (
-                      <td className="py-3 px-4 text-gray-700">{getValue(app.department)}</td>)}
-                    <td className="py-3 px-4"><StatusBadge status={app.status} /></td><td className="py-3 px-4"><StatusBadge status="Pending" /></td><td className="py-3 px-4"><div className="flex gap-2"><ActionButtons
-                          onView={() =>handleView(app)}
-                          onApprove={app.status === 'Pending' ? () =>handleApprove(app.id) : null}
-                          onReject={app.status === 'Pending' ? () =>handleReject(app.id) : null}
-                          onDelete={() =>handleDelete(app.id)}
-                        /></div></td></tr>))}
-              </tbody></table>{filteredApps.length === 0 && (
-              <div className="text-center py-8 text-gray-500">No applications found</div>)}
-          </div></div></PageContainer>{/* Modals */}
+              /></div></div>{/* Table */}
+          {loading ? (
+            <TableSkeleton cols={activeTab === 'students' ? 6 : 7} rows={6} />
+          ) : (
+            <>
+              <div className="overflow-x-auto"><table className="w-full text-sm min-w-[750px]"><thead><tr className="border-b-2 border-gray-200"><th className="text-left py-3 px-4 font-semibold text-gray-700">{activeTab === 'students' ? 'Application ID' : 'Employee ID'}
+                      </th><th className="text-left py-3 px-4 font-semibold text-gray-700">Name</th><th className="text-left py-3 px-4 font-semibold text-gray-700">{activeTab === 'students' ? 'Course' : 'Role'}
+                      </th>{activeTab === 'faculty' && (
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Department</th>)}
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th><th className="text-left py-3 px-4 font-semibold text-gray-700">Payment Status</th><th className="text-left py-3 px-4 font-semibold text-gray-700">Actions</th></tr></thead><tbody>{paginatedApps.map((app) =>(
+                      <tr key={app.id} className="border-b border-gray-100 hover:bg-gray-50"><td className="py-3 px-4 text-gray-700">{app.id}</td><td className="py-3 px-4 text-gray-700">{app.name || app.fullName}</td><td className="py-3 px-4 text-gray-700">{activeTab === 'students' ? getValue(app.course) : getValue(app.role)}
+                        </td>{activeTab === 'faculty' && (
+                          <td className="py-3 px-4 text-gray-700">{getValue(app.department)}</td>)}
+                        <td className="py-3 px-4"><StatusBadge status={app.status} /></td><td className="py-3 px-4"><StatusBadge status="Pending" /></td><td className="py-3 px-4"><div className="flex gap-2"><ActionButtons
+                              onView={() =>handleView(app)}
+                              onApprove={app.status === 'Pending' ? () =>handleApprove(app.id) : null}
+                              onReject={app.status === 'Pending' ? () =>handleReject(app.id) : null}
+                              onDelete={() =>handleDelete(app.id)}
+                            /></div></td></tr>))}
+                  </tbody></table>{filteredApps.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">No applications found</div>)}
+              </div>
+              <Pagination 
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={(page) => setCurrentPage(page)}
+              />
+            </>
+          )}
+          </div></PageContainer>{/* Modals */}
       {showDetailsModal && selectedApp && (
         <AdmissionDetailsModal
           isOpen={showDetailsModal}

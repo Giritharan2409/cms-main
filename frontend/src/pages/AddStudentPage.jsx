@@ -8,6 +8,7 @@ export default function AddStudentPage() {
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   const initialData = {
     // Step 1: Personal
@@ -19,6 +20,8 @@ export default function AddStudentPage() {
     avatar: null,
     address: '',
     bloodGroup: '',
+    defaultPassword: '',
+    useAutoPassword: true,
     // Step 2: Academic
     id: `STU-2025-${Math.floor(1000 + Math.random() * 9000)}`,
     previousSchool: '',
@@ -121,6 +124,9 @@ export default function AddStudentPage() {
       if (formData.phone && !/^\d{10}$/.test(formData.phone.replace(/\D/g, ''))) {
         newErrors.phone = 'Enter a valid 10-digit mobile number';
       }
+      if (!formData.useAutoPassword && !formData.defaultPassword) {
+        newErrors.defaultPassword = 'Custom password is required';
+      }
     } else if (s === 2) {
       // Academic validation - optional fields
       if (formData.yearOfPassing && isNaN(formData.yearOfPassing)) {
@@ -211,6 +217,7 @@ export default function AddStudentPage() {
           guardianPhone: formData.guardianPhone,
           guardianEmail: formData.guardianEmail,
           guardianOccupation: formData.guardianOccupation,
+          password: formData.useAutoPassword ? '' : formData.defaultPassword,
           status: 'Pending',
           documents: [
             { id: 'DOC-01', name: 'Passport Photo', type: 'base64', data: formData.docs.passportPhoto },
@@ -259,7 +266,7 @@ export default function AddStudentPage() {
 
         alert(` Student enrolled successfully!\n\nApplication ID: ${result.id || result.admission_id || result.name || 'Processing'}\n\nYour application is now under review.`);
         localStorage.removeItem('add_student_draft');
-        navigate('/admission');
+        navigate('/students');
       } catch (error) {
         if (error.name === 'AbortError') {
           console.error(' Request timeout:', error);
@@ -300,7 +307,7 @@ export default function AddStudentPage() {
   return (
     <Layout title="Add New Student"><div className="space-y-4">{/* Page Header */}
         <div className="bg-white rounded-lg shadow p-4 flex items-center justify-between"><div className="flex items-center gap-3"><div className="p-2 bg-[#276221]/10 rounded-lg"><span className="material-symbols-outlined text-lg text-[#276221]">person_add</span></div><div><h1 className="text-lg font-bold text-gray-900">Enroll New Student</h1><p className="text-xs text-gray-600 mt-0.5">Step {step} of 8: {steps[step-1].label}</p></div></div><button
-            onClick={() =>navigate('/add-member')}
+            onClick={() =>navigate('/students')}
             className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
           ><span className="material-symbols-outlined text-base">arrow_back</span><span className="font-medium">Back</span></button></div>{/* Progress Bar */}
         <div className="bg-white rounded-lg shadow overflow-hidden"><div className="flex h-1.5">{steps.map((s) =>(
@@ -337,7 +344,30 @@ export default function AddStudentPage() {
                     </div><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Gender <span className="text-red-500">*</span></label><select name="gender" value={formData.gender} onChange={handleChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 bg-white"><option>Male</option><option>Female</option><option>Other</option></select></div><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Email <span className="text-red-500">*</span></label><input type="email" name="email" value={formData.email} onChange={handleChange} className={`w-full px-3 py-2 text-sm rounded-lg border ${errors.email ? 'border-red-400' : 'border-gray-200'} focus:outline-none focus:ring-2`} placeholder="example@mit.edu" />{errors.email && <p className="text-xs text-red-500 font-medium">{errors.email}</p>}
                     </div><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Phone Number</label><input name="phone" value={formData.phone} onChange={handleChange} maxLength="10" pattern="[0-9]{10}" className={`w-full px-3 py-2 text-sm rounded-lg border ${errors.phone ? 'border-red-400' : 'border-gray-200'} focus:outline-none focus:ring-2`} placeholder="10-digit number" />{errors.phone && <p className="text-xs text-red-500 font-medium">{errors.phone}</p>}
                     </div><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Blood Group</label><select name="bloodGroup" value={formData.bloodGroup} onChange={handleChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 bg-white"><option value="">Select Group</option>{['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'].map(bg =><option key={bg} value={bg}>{bg}</option>)}
-                      </select></div></div></div><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Permanent Address</label><textarea name="address" value={formData.address} onChange={handleChange} rows="2" className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 bg-gray-50/30 resize-none" placeholder="Enter complete home address..." /></div></div>)}
+                      </select></div></div></div><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Permanent Address</label><textarea name="address" value={formData.address} onChange={handleChange} rows="2" className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 bg-gray-50/30 resize-none" placeholder="Enter complete home address..." /></div>
+                {/* Default Password */}
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="material-symbols-outlined text-amber-600 text-lg">lock</span>
+                    <label className="text-xs font-bold text-amber-800 uppercase tracking-wider">Default Password</label>
+                  </div>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" checked={formData.useAutoPassword} onChange={(e) => setFormData(prev => ({ ...prev, useAutoPassword: e.target.checked, defaultPassword: '' }))} className="w-4 h-4 rounded text-[#276221] focus:ring-[#276221]" />
+                    <span className="text-xs text-gray-700 font-medium">Auto-generate from Student ID / Roll Number</span>
+                  </label>
+                  {!formData.useAutoPassword && (
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-gray-700">Custom Password <span className="text-red-500">*</span></label>
+                      <div className="relative">
+                        <input type={showPassword ? 'text' : 'password'} name="defaultPassword" value={formData.defaultPassword} onChange={handleChange} className={`w-full px-3 py-2 pr-10 text-sm rounded-lg border ${errors.defaultPassword ? 'border-red-400' : 'border-gray-200'} focus:outline-none focus:ring-2 focus:ring-[#276221]/20`} placeholder="Enter default password" />
+                        <button type="button" onClick={() => setShowPassword(prev => !prev)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 transition-colors" title={showPassword ? 'Hide password' : 'Show password'}>
+                          <span className="material-symbols-outlined text-[18px]">{showPassword ? 'visibility_off' : 'visibility'}</span>
+                        </button>
+                      </div>
+                      {errors.defaultPassword && <p className="text-xs text-red-500 font-medium">{errors.defaultPassword}</p>}
+                    </div>
+                  )}
+                </div></div>)}
 
             {/* Step 2: Academic */}
             {step === 2 && (

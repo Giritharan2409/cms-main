@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { Pagination } from '../components/common'
 import Layout from '../components/Layout'
 import KpiCard from '../components/KpiCard'
 import KpiGrid from '../components/KpiGrid'
@@ -40,6 +41,8 @@ export default function PlacementPage({ noLayout = false }) {
   const [apiNotice, setApiNotice] = useState('')
   const [refreshing, setRefreshing] = useState(false)
   const filterRef = useRef(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(3)
 
   async function loadPlacements({ silent = false } = {}) {
     if (!silent) setLoading(true)
@@ -425,7 +428,7 @@ export default function PlacementPage({ noLayout = false }) {
                 </td>
               </tr>
             )}
-            {!loading && filteredEntries.map((p, i) => (
+            {!loading && filteredEntries.slice((currentPage-1)*pageSize, currentPage*pageSize).map((p, i) => (
               <tr key={p.id || p._id || i} className="hover:bg-slate-50 transition-colors">
                 {showStudentColumn && <td className="px-6 py-4 text-sm font-semibold text-slate-900">{p.name || p.ownerId || '-'}</td>}
                 <td className="px-6 py-4 text-sm text-slate-600 font-medium">{p.company}</td>
@@ -452,6 +455,14 @@ export default function PlacementPage({ noLayout = false }) {
             ))}
           </tbody>
         </table>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={Math.max(1, Math.ceil(filteredEntries.length / pageSize))}
+          onPageChange={setCurrentPage}
+          totalItems={filteredEntries.length}
+          pageSize={pageSize}
+          onPageSizeChange={(s) => { setPageSize(s); setCurrentPage(1); }}
+        />
       </div>
 
       <Modal
